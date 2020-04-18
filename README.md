@@ -1,5 +1,6 @@
 # CheckTikZDiagram
-TikZの図式を検証するツール
+TikZの図式を検証するためのツールです。
+(.NET Core 3.1を使用したWindowsアプリケーション)
 
 ## 使い方
 ![ツールの画面イメージ](http://alg-d.com/CheckTikZDiagram00.png)
