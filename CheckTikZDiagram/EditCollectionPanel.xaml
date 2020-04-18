@@ -1,0 +1,69 @@
+﻿<UserControl x:Class="CheckTikZDiagram.EditCollectionPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:CheckTikZDiagram"
+             mc:Ignorable="d" 
+             d:DesignHeight="200" d:DesignWidth="200">
+    <Grid>
+        
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="25" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="28*" />
+            <ColumnDefinition Width="47*"/>
+        </Grid.ColumnDefinitions>
+
+        <ListBox    Grid.Row="0" Grid.ColumnSpan="3" ItemsSource="{Binding ItemList, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:EditCollectionPanel}}}"
+                    SelectedIndex="{Binding SelectedIndex, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:EditCollectionPanel}}}"
+                    FontFamily="Consolas" />
+        <Label      Grid.Row="1" Grid.Column="0" Content="コマンド" />
+        <TextBox    Grid.Row="1" Grid.Column="1" Text="{Binding Value, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:EditCollectionPanel}}, UpdateSourceTrigger=PropertyChanged}" Grid.ColumnSpan="2" Name="commandTextBox" />
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" FlowDirection="RightToLeft">
+            <Button Content="削除" Padding="6,1" Click="DeleteButton_Click">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="IsEnabled" Value="True"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedIndex, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:EditCollectionPanel}}}" Value="-1">
+                                <Setter Property="IsEnabled" Value="False"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="更新" Padding="6,1" Click="UpdateButton_Click">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="IsEnabled" Value="True"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedIndex, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:EditCollectionPanel}}}" Value="-1">
+                                <Setter Property="IsEnabled" Value="False"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Value, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:EditCollectionPanel}}}" Value="">
+                                <Setter Property="IsEnabled" Value="False"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="追加" Padding="6,1" Click="AddButton_Click">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="IsEnabled" Value="True"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Value, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:EditCollectionPanel}}}" Value="">
+                                <Setter Property="IsEnabled" Value="False"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

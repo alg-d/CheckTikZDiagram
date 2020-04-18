@@ -1,0 +1,177 @@
+﻿<Window x:Class="CheckTikZDiagram.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CheckTikZDiagram"
+        mc:Ignorable="d"
+        Title="CheckTikZDiagram" Height="730" Width="1200">
+    <Window.DataContext>
+        <local:MainViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Margin" Value="2,3" />
+            <Setter Property="Padding" Value="3" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Padding" Value="2" />
+        </Style>
+    </Window.Resources>
+    
+    <TabControl>
+        <TabItem Header="実行結果">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Button      Grid.Row="0" Grid.Column="0" Content="ファイル選択" Command="{Binding OpenFileCommand}"/>
+                <CheckBox    Grid.Row="0" Grid.Column="1" Margin="5"  IsChecked="{Binding ErrorOnly}" VerticalAlignment="Center">エラーのあった行のみ表示する</CheckBox>
+                <ProgressBar Grid.Row="0" Grid.Column="2" Margin="5" Width="250" Maximum="{Binding ReadFileLine}" Value="{Binding Progressvalue}" />
+                <Label       Grid.Row="0" Grid.Column="3" Content="エラー数 / 射の個数" />
+                <Label       Grid.Row="0" Grid.Column="4" Content="{Binding ErrorCount}" />
+                <Label       Grid.Row="0" Grid.Column="5" Content="/" />
+                <Label       Grid.Row="0" Grid.Column="6" Content="{Binding MorphismCount}" />
+                <Button      Grid.Row="0" Grid.Column="7" Content="再読み込み" Command="{Binding ReloadCommand}" HorizontalAlignment="Right"
+                             IsEnabled="{Binding NotEmptyPath}" />
+
+                <ListView    Grid.Row="1" Grid.ColumnSpan="8" Margin="2,0,2,2" ItemsSource="{Binding CheckResultCollection}" FontFamily="Consolas" >
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="{x:Type ListViewItem}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsError}" Value="False">
+                                    <Setter Property="Background" Value="#FFFFFFD0"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Width="50" Header="行" DisplayMemberBinding="{Binding Line}" />
+                            <GridViewColumn Width="1095" Header="結果" DisplayMemberBinding="{Binding Message}" />
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Grid>
+        </TabItem>
+        <TabItem Header="設定1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" FlowDirection="LeftToRight">
+                    <Button Content="設定1・設定2を保存"  Command="{Binding SaveCommand}"/>
+                </StackPanel>
+
+                <Label   Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Content="以下を表すTeXコマンド" />
+
+                <Label   Grid.Row="2" Grid.Column="1" Content="米田埋込" />
+                <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding Config.Yoneda}" />
+
+                <Label   Grid.Row="3" Grid.Column="1" Content="opposite" />
+                <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding Config.Opposite}" />
+
+                <Label   Grid.Row="4" Grid.Column="1" Content="逆射" />
+                <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding Config.Inverse}" />
+
+                <Label   Grid.Row="5" Grid.Column="1" Content="随伴" />
+                <TextBox Grid.Row="5" Grid.Column="2" Text="{Binding Config.Adjoint}" />
+
+                <Label   Grid.Row="6" Grid.Column="1" Content="射の合成" />
+                <TextBox Grid.Row="6" Grid.Column="2" Text="{Binding Config.Composite}" />
+
+                <Label   Grid.Row="7" Grid.Column="1" Content="対角関手" />
+                <TextBox Grid.Row="7" Grid.Column="2" Text="{Binding Config.Diagonal}" />
+
+                <Label   Grid.Row="8" Grid.Column="1" Content="余完備化" />
+                <TextBox Grid.Row="8" Grid.Column="2" Text="{Binding Config.Cocompletion}" />
+
+                <Label   Grid.Row="1" Grid.Column="3" Content="圏とみなすTeXコマンド" />
+                <local:EditCollectionPanel Grid.Row="2" Grid.Column="3" Grid.RowSpan="8" Margin="10,0,0,0" Height="300" VerticalAlignment="Top"
+                                           ItemList="{Binding Config.Categories}" />
+
+                <Label   Grid.Row="1" Grid.Column="4" Content="二項演算とみなすTeXコマンド" />
+                <local:EditCollectionPanel Grid.Row="2" Grid.Column="4" Grid.RowSpan="7" Margin="10,0,0,0" ItemList="{Binding Config.Operators}" />
+
+                <Label   Grid.Row="1" Grid.Column="5" Content="射の合成(二項演算)とみなすTeXコマンド" />
+                <local:EditCollectionPanel Grid.Row="2" Grid.Column="5" Grid.RowSpan="7" Margin="10,0,0,0" ItemList="{Binding Config.Compositions}" />
+            </Grid>
+        </TabItem>
+        <TabItem Header="設定2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="180" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="180" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="800" />
+                </Grid.ColumnDefinitions>
+
+                <Label   Grid.Row="0" Grid.Column="0" Content="nodeのフォーマット" />
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Config.TikZNodeRegex}" />
+                <Label   Grid.Row="1" Grid.ColumnSpan="2" Content="name: nodeの名前　math: nodeの数式" Margin="0,0,0,10" />
+
+                <Label   Grid.Row="2" Grid.Column="0" Content="arrowのフォーマット"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Config.TikZArrowRegex}" />
+                <Label   Grid.Row="3" Grid.ColumnSpan="2" Content="arrow: drawのオプション　source: 始点の名前　math: 射の数式　target: 終点の名前" Margin="0,0,0,10" />
+
+                <Label   Grid.Row="4" Grid.Column="0" Content="射のフォーマット" />
+                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Config.MorphismRegex}" />
+                <Label   Grid.Row="5" Grid.ColumnSpan="2" Content="name: 射の数式　source: domainの数式　arrow: 射の種類を決める部分　target: codomainの数式" Margin="0,0,0,10" />
+
+                <Label   Grid.Row="6" Grid.Column="0" Content="パラメーター付き射" />
+                <local:EditCollectionPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" ItemList="{Binding Config.Morphisms}" />
+
+                <Label   Grid.Row="8" Grid.Column="0" Content="関手" />
+                <local:EditCollectionPanel Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2" ItemList="{Binding Config.Functors}" />
+            </Grid>
+        </TabItem>
+    </TabControl>
+</Window>
