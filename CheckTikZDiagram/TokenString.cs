@@ -13,8 +13,9 @@ namespace CheckTikZDiagram
     /// (1)添え字(_ ^)の部分は必ず { } で囲う
     /// (2)改行は削除する
     /// (3)空白系は無視される
+    /// (4) ' は ^ { \prime } とみなす
     /// </summary>
-    public class TokenString : IEquatable<TokenString>
+    public class TokenString : IEquatable<TokenString?>
     {
         private readonly string _toOriginalString;
         private readonly ReadOnlyCollection<string> _values;
@@ -33,13 +34,7 @@ namespace CheckTikZDiagram
             _toOriginalString = "";
         }
 
-        public TokenString(Token token)
-            : this(new[] { token })
-        {
-            if (token.IsEmpty) throw new ArgumentException($"{nameof(token)}が空です");
-        }
-
-        public TokenString(IList<Token> tokens)
+        private TokenString(IList<Token> tokens)
         {
             if (tokens.Count == 0) throw new ArgumentException($"{nameof(tokens)}が空です");
 
@@ -47,6 +42,23 @@ namespace CheckTikZDiagram
             _values = new ReadOnlyCollection<string>(Tokens.Select(x => x.Value).ToArray());
 
             _toOriginalString = CreateOriginalString();
+        }
+
+        public static TokenString Create(Token token)
+        {
+            return TokenString.Create(new[] { token });
+        }
+
+        public static TokenString Create(IList<Token> tokens)
+        {
+            if (tokens.Count == 0)
+            {
+                return TokenString.Empty;
+            }
+            else
+            {
+                return new TokenString(tokens);
+            }
         }
 
         private string CreateOriginalString()
@@ -91,7 +103,7 @@ namespace CheckTikZDiagram
                 this.Tokens.Select(x => x.Origin).Concat(otherOrigins),
                 (x, y) => new Token(x, y)
             ).ToArray();
-            return new TokenString(tokens);
+            return tokens.ToTokenString();
         }
 
         public TokenString Add(Token other)
@@ -121,12 +133,7 @@ namespace CheckTikZDiagram
                 }
             }
 
-            return new TokenString(tokens);
-        }
-
-        public bool Contains(string value)
-        {
-            return this._values.Any(x => x.Contains(value));
+            return tokens.ToTokenString();
         }
 
         public bool EndsWith(char value)
@@ -145,6 +152,7 @@ namespace CheckTikZDiagram
             return x.Last() == value;
         }
 
+
         public bool Equals(string text)
         {
             return this.Equals(text.ToTokenString());
@@ -154,25 +162,10 @@ namespace CheckTikZDiagram
 
         public override bool Equals(object? obj)
         {
-            if (obj is null)
-            {
-                return false;
-            }
-
-            if (object.ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            if (this.GetType() != obj.GetType())
-            {
-                return false;
-            }
-
             return this.Equals(obj as TokenString);
         }
 
-        public bool Equals([AllowNull] TokenString other)
+        public bool Equals(TokenString? other)
         {
             if (other == null || this._values.Count != other.Tokens.Count)
             {

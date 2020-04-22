@@ -209,7 +209,28 @@ b",
         }
 
         [TestMethod]
-        public void パラメーター()
+        public void Prime()
+        {
+            TestHelper(new string[]
+            {
+                @"a'",
+                @"a '",
+                @" a ' ",
+                @"a^{\prime}",
+                @"a ^ { \prime }",
+            }, @"a ^ { \prime }");
+            TestHelper(new string[]
+            {
+                @"a'b'",
+                @"a ' b '",
+                @"a^{\prime}b'",
+                @"a'b^{ \prime }",
+                @"a^{\prime}b^{ \prime }",
+            }, @"a ^ { \prime } b ^ { \prime }");
+        }
+
+        [TestMethod]
+        public void 変数()
         {
             TestHelper(new string[]
             {
@@ -241,7 +262,7 @@ b",
         }
 
         [TestMethod]
-        public void パラメーターst()
+        public void 変数st()
         {
             TestHelper(new string[]
             {
@@ -324,6 +345,10 @@ b",
         [DataRow(@"\cat{C}^{\test}", @"\cat{C}^{\test}")]
         [DataRow(@"\cat{C}^\test", @"\cat{C}^\test")]
         [DataRow(@"\cat {\Z } ^{\test \test }", @"\cat {\Z } ^{\test \test }")]
+        [DataRow(@"a'b'", @"a'b'")]
+        [DataRow(@"a ' b '", @"a ' b '")]
+        [DataRow(@"\alpha_i'", @"\alpha_i'")]
+        [DataRow(@"\beta'_i", @"\beta'_i")]
         public void ToOriginalString(string value, string result)
         {
             value.ToTokenString().ToOriginalString().Is(result);
@@ -344,7 +369,7 @@ b",
         }
 
         [TestMethod]
-        public void TestEmpty()
+        public void Empty()
         {
             TokenString.Empty.IsEmpty.IsTrue();
             "a".ToTokenString().IsEmpty.IsFalse();
@@ -360,6 +385,29 @@ b",
             TokenString.Empty.Add(ts).ToString().Is("a b c d e f");
             TokenString.Empty.Add(ts).ToOriginalString().Is("abc def");
             TokenString.Empty.Add(TokenString.Empty).ToString().Is("");
+        }
+
+        [DataTestMethod]
+        [DataRow(@"?", true)]
+        [DataRow(@"a?", true)]
+        [DataRow(@"abc?", true)]
+        [DataRow(@"\test?", true)]
+        [DataRow(@"\test\cat?", true)]
+        [DataRow(@"???", true)]
+        [DataRow(@"#1?", true)]
+        [DataRow(@"#1#2?", true)]
+        [DataRow(@"#1?#2?", true)]
+        [DataRow(@"#1 ?", true)]
+        [DataRow(@"", false)]
+        [DataRow(@"?a", false)]
+        [DataRow(@"?abc", false)]
+        [DataRow(@"?\test", false)]
+        [DataRow(@"#1?#2", false)]
+        [DataRow(@"#1#2", false)]
+        [DataRow(@"#1#2?#3", false)]
+        public void EndsWith(string text, bool result)
+        {
+            text.ToTokenString().EndsWith('?').Is(result);
         }
 
 

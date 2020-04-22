@@ -49,44 +49,14 @@ namespace CheckTikZDiagram
             return new TokenStringFactory(text).Create();
         }
 
-        ///// <summary>
-        ///// 一番外側についている括弧は全て外した文字列を返す
-        ///// </summary>
-        ///// <param name="text"></param>
-        ///// <returns></returns>
-        //public static string RemoveBrackets(this string text)
-        //{
-        //    if (text.IsNullOrEmpty())
-        //    {
-        //        return text;
-        //    }
-
-        //    while (text.First().ToString().IsOpenBracket() && text.Last().ToString().IsCloseBracket())
-        //    {
-        //        text = text[1..^1];
-        //    }
-
-        //    return text;
-        //}
-
-        ///// <summary>
-        ///// 一番外側についている括弧は全て外した文字列を返す
-        ///// </summary>
-        ///// <param name="text"></param>
-        ///// <returns></returns>
-        //public static string RemoveBracketsToString(this TokenString text)
-        //{
-        //    return text.ToString().RemoveBrackets();
-        //}
-
-        ///// <summary>
-        ///// 一番外側についている括弧は全て外したNormalizedStringを返す
-        ///// </summary>
-        ///// <param name="text"></param>
-        ///// <returns></returns>
-        //public static TokenString RemoveBrackets(this TokenString text)
-        //{
-        //    return text.RemoveBracketsToString().ToTokenString();
-        //}
+        /// <summary>
+        /// Tokenのリストをトークン列にします。
+        /// </summary>
+        /// <param name="list">Tokenのリスト</param>
+        /// <returns></returns>
+        public static TokenString ToTokenString(this IList<Token> tokens)
+        {
+            return TokenString.Create(tokens);
+        }
     }
 }

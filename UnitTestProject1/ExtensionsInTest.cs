@@ -20,7 +20,11 @@ namespace UnitTestProject1
 
         public static void TestMorphism(this IEnumerable<Morphism> morphisms, string name, string source, string target, MorphismType type)
         {
-            var array = morphisms.ToArray();
+            var array = morphisms.Select(m =>
+            {
+                Console.WriteLine(m.ToString());
+                return m;
+            }).ToArray();
             if (array.Length == 1)
             {
                 var m = array[0];
@@ -31,11 +35,10 @@ namespace UnitTestProject1
             }
             else
             {
-                array.Any(m => 
-                    m.Name.ToTokenString().Equals(name)
-                    && m.Source.ToTokenString().Equals(source)
-                    && m.Target.ToTokenString().Equals(target)
-                    && m.Type.Equals(type)
+                array.Any(m => m.Name.ToTokenString().Equals(name)
+                            && m.Source.ToTokenString().Equals(source)
+                            && m.Target.ToTokenString().Equals(target)
+                            && m.Type.Equals(type)
                 ).IsTrue($"array.Length == {array.Length}");
             }
         }
@@ -103,6 +106,13 @@ namespace UnitTestProject1
         {
             mathObject.IsInstanceOf<MathToken>();
             mathObject.Main.TestString(main);
+        }
+
+        public static MathObject CreateSingleMathObject(string text)
+        {
+            var math = new MathObjectFactory(text).Create().TestSingle();
+            math.OriginalText.Is(text);
+            return math;
         }
 
 

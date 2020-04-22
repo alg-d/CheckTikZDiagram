@@ -29,200 +29,168 @@ namespace UnitTestProject1
         [TestMethod]
         public void CopyWithoutSup()
         {
-            var math = CreateSingleSequence(@"a\times b");
-            math = math.CopyWithoutSup();
-            math.List.Count.Is(3);
-            math.List[0].IsMathToken("a");
-            math.List[1].IsMathToken(@"\times");
-            math.List[2].IsMathToken("b");
-            math.Sup.IsNull();
-            math.Sub.IsNull();
-            math.ToTokenString().TestString(@"a\times b");
-            math.OriginalText.Is(@"a\times b");
+            var seq = CreateSingleSequence(@"a\times b");
+            seq = seq.CopyWithoutSup().AsMathSequence();
+            seq.List.Count.Is(3);
+            seq.List[0].IsMathToken("a");
+            seq.List[1].IsMathToken(@"\times");
+            seq.List[2].IsMathToken("b");
+            seq.Sup.IsNull();
+            seq.Sub.IsNull();
+            seq.ToTokenString().TestString(@"a\times b");
+            seq.OriginalText.Is(@"a\times b");
 
-            math = CreateSingleSequence(@"(\alpha \beta)");
-            math = math.CopyWithoutSup();
-            math.List.Count.Is(2);
-            math.List[0].IsMathToken(@"\alpha");
-            math.List[1].IsMathToken(@"\beta");
-            math.LeftBracket.TestToken("(");
-            math.RightBracket.TestToken(")");
-            math.Sup.IsNull();
-            math.Sub.IsNull();
-            math.ToTokenString().TestString(@"(\alpha\beta)");
-            math.OriginalText.Is(@"(\alpha \beta)");
+            seq = CreateSingleSequence(@"( \alpha )");
+            seq = seq.CopyWithoutSup().AsMathSequence();
+            seq.List.Count.Is(1);
+            seq.List[0].IsMathToken(@"\alpha");
+            seq.LeftBracket.TestToken("(");
+            seq.RightBracket.TestToken(")");
+            seq.Sup.IsNull();
+            seq.Sub.IsNull();
+            seq.ToTokenString().TestString(@"(\alpha)");
+            seq.OriginalText.Is(@"( \alpha )");
 
-            math = CreateSingleSequence(@"f_i");
-            math = math.CopyWithoutSup();
-            math.List.Count.Is(1);
-            math.List[0].IsMathToken("f");
-            math.Sup.IsNull();
-            math.Sub.IsMathToken("i");
-            math.ToTokenString().TestString("f_i");
+            seq = CreateSingleSequence(@"(\alpha \beta)");
+            seq = seq.CopyWithoutSup().AsMathSequence();
+            seq.List.Count.Is(2);
+            seq.List[0].IsMathToken(@"\alpha");
+            seq.List[1].IsMathToken(@"\beta");
+            seq.LeftBracket.TestToken("(");
+            seq.RightBracket.TestToken(")");
+            seq.Sup.IsNull();
+            seq.Sub.IsNull();
+            seq.ToTokenString().TestString(@"(\alpha\beta)");
+            seq.OriginalText.Is(@"(\alpha \beta)");
 
-            math = CreateSingleSequence(@"\theta^i_a");
-            math = math.CopyWithoutSup();
-            math.List.Count.Is(1);
-            math.List[0].IsMathToken(@"\theta");
-            math.Sup.IsNull();
-            math.Sub.IsMathToken("a");
-            math.ToTokenString().TestString(@"\theta_a");
-            math.OriginalText.Is(@"\theta_{a}");
+            seq = CreateSingleSequence(@"\rho^i");
+            var math = seq.CopyWithoutSup();
+            math.IsMathToken(@"\rho");
+            math.ToTokenString().TestString(@"\rho");
+            math.OriginalText.Is(@"\rho");
 
-            math = CreateSingleSequence(@"( abc )^{ ijk }_{ uvw }");
-            math = math.CopyWithoutSup();
-            math.List.Count.Is(3);
-            math.Main.TestString("abc");
-            math.Sup.IsNull();
-            math.Sub.ToTokenString().TestString("uvw");
-            math.ToTokenString().TestString(@"(abc)_{uvw}");
-            math.OriginalText.Is(@"( abc )_{ uvw}");
+            seq = CreateSingleSequence(@"f_i");
+            seq = seq.CopyWithoutSup().AsMathSequence();
+            seq.List.Count.Is(1);
+            seq.List[0].IsMathToken("f");
+            seq.Sup.IsNull();
+            seq.Sub.IsMathToken("i");
+            seq.ToTokenString().TestString("f_i");
+
+            seq = CreateSingleSequence(@"\theta^i_a");
+            seq = seq.CopyWithoutSup().AsMathSequence();
+            seq.List.Count.Is(1);
+            seq.List[0].IsMathToken(@"\theta");
+            seq.Sup.IsNull();
+            seq.Sub.IsMathToken("a");
+            seq.ToTokenString().TestString(@"\theta_a");
+            seq.OriginalText.Is(@"\theta_{a}");
+
+            seq = CreateSingleSequence(@"( abc )^{ ijk }_{ uvw }");
+            seq = seq.CopyWithoutSup().AsMathSequence();
+            seq.List.Count.Is(3);
+            seq.Main.TestString("abc");
+            seq.Sup.IsNull();
+            seq.Sub.ToTokenString().TestString("uvw");
+            seq.ToTokenString().TestString(@"(abc)_{uvw}");
+            seq.OriginalText.Is(@"( abc )_{ uvw}");
         }
 
         [TestMethod]
         public void CopyWithoutSub()
         {
-            var math = CreateSingleSequence(@"a \times b");
-            math = math.CopyWithoutSub();
-            math.List.Count.Is(3);
-            math.List[0].IsMathToken("a");
-            math.List[1].IsMathToken(@"\times");
-            math.List[2].IsMathToken("b");
-            math.Sup.IsNull();
-            math.Sub.IsNull();
-            math.ToTokenString().TestString(@"a \times b");
-
-            math = CreateSingleSequence(@"(\alpha\beta)");
-            math = math.CopyWithoutSub();
-            math.List.Count.Is(2);
-            math.List[0].IsMathToken(@"\alpha");
-            math.List[1].IsMathToken(@"\beta");
-            math.LeftBracket.TestToken("(");
-            math.RightBracket.TestToken(")");
-            math.Sup.IsNull();
-            math.Sub.IsNull();
-            math.ToTokenString().TestString(@"(\alpha\beta)");
-
-            math = CreateSingleSequence(@"f_i");
-            math = math.CopyWithoutSub();
-            math.List.Count.Is(1);
-            math.List[0].IsMathToken("f");
-            math.Sub.IsNull();
-            math.ToTokenString().TestString("f");
-            math.OriginalText.Is(@"f");
-
-            math = CreateSingleSequence(@"\theta^i_a");
-            math = math.CopyWithoutSub();
-            math.List.Count.Is(1);
-            math.List[0].IsMathToken(@"\theta");
-            math.Sup.IsMathToken("i");
-            math.Sub.IsNull();
-            math.ToTokenString().TestString(@"\theta^i");
-            math.OriginalText.Is(@"\theta^{i}");
-
-            math = CreateSingleSequence(@"(a b c) ^ { i j k } _ { u v w }");
-            math = math.CopyWithoutSub();
-            math.List.Count.Is(3);
-            math.Main.TestString("abc");
-            math.Sup.ToTokenString().TestString("ijk");
-            math.Sub.IsNull();
-            math.ToTokenString().TestString(@"(abc)^{ijk}");
-            math.OriginalText.Is(@"(a b c)^{ i j k}");
-        }
-
-        [TestMethod]
-        public void Divide_通常()
-        {
-            var token = new MathObjectFactory("F").Create().TestSingle();
-            token.Divide(token).Count().Is(0);
-
-            var math = new MathObjectFactory(@"a\times b").Create().TestSingle();
-            math.Divide(token).Count().Is(0);
-
-            token = new MathObjectFactory(@"\times").Create().TestSingle();
-            var ar = math.Divide(token).ToArray();
-            ar.Length.Is(1);
-            ar[0].left.IsMathToken("a");
-            ar[0].left.OriginalText.Is("a");
-            ar[0].center.IsMathToken(@"\times");
-            ar[0].right.IsMathToken("b");
-            ar[0].right.OriginalText.Is("b");
-
-            math = CreateSingleSequence(@"a\times b\times c");
-            ar = math.Divide(token).ToArray();
-            ar.Length.Is(2);
-
-            ar[0].left.IsMathToken("a");
-            ar[0].left.OriginalText.Is("a");
-            ar[0].center.IsMathToken(@"\times");
-            var seq = (MathSequence)ar[0].right;
-            seq.List.Count.Is(3);
-            seq.List[0].IsMathToken("b");
-            seq.List[1].IsMathToken(@"\times");
-            seq.List[2].IsMathToken("c");
-            seq.OriginalText.Is(@"b\times c");
-
-            seq = (MathSequence)ar[1].left;
+            var seq = CreateSingleSequence(@"a \times b");
+            seq = seq.CopyWithoutSub().AsMathSequence();
             seq.List.Count.Is(3);
             seq.List[0].IsMathToken("a");
             seq.List[1].IsMathToken(@"\times");
             seq.List[2].IsMathToken("b");
-            seq.OriginalText.Is(@"a\times b");
-            ar[1].center.IsMathToken(@"\times");
-            ar[1].right.IsMathToken("c");
-            ar[1].right.OriginalText.Is("c");
+            seq.Sup.IsNull();
+            seq.Sub.IsNull();
+            seq.ToTokenString().TestString(@"a \times b");
+
+            seq = CreateSingleSequence(@"(\alpha\beta)");
+            seq = seq.CopyWithoutSub().AsMathSequence();
+            seq.List.Count.Is(2);
+            seq.List[0].IsMathToken(@"\alpha");
+            seq.List[1].IsMathToken(@"\beta");
+            seq.LeftBracket.TestToken("(");
+            seq.RightBracket.TestToken(")");
+            seq.Sup.IsNull();
+            seq.Sub.IsNull();
+            seq.ToTokenString().TestString(@"(\alpha\beta)");
+
+            seq = CreateSingleSequence(@"f_i");
+            var math = seq.CopyWithoutSub();
+            math.IsMathToken("f");
+            math.ToTokenString().TestString("f");
+            math.OriginalText.Is(@"f");
+
+            seq = CreateSingleSequence(@"\theta^i_a");
+            seq = seq.CopyWithoutSub().AsMathSequence();
+            seq.List.Count.Is(1);
+            seq.List[0].IsMathToken(@"\theta");
+            seq.Sup.IsMathToken("i");
+            seq.Sub.IsNull();
+            seq.ToTokenString().TestString(@"\theta^i");
+            seq.OriginalText.Is(@"\theta^{i}");
+
+            seq = CreateSingleSequence(@"(a b c) ^ { i j k } _ { u v w }");
+            seq = seq.CopyWithoutSub().AsMathSequence();
+            seq.List.Count.Is(3);
+            seq.Main.TestString("abc");
+            seq.Sup.ToTokenString().TestString("ijk");
+            seq.Sub.IsNull();
+            seq.ToTokenString().TestString(@"(abc)^{ijk}");
+            seq.OriginalText.Is(@"(a b c)^{ i j k}");
         }
 
         [TestMethod]
-        public void Divide_括弧()
+        public void SubSequence()
         {
-            var token = new MathObjectFactory(@"\otimes").Create().TestSingle();
+            var seq = CreateSingleSequence("abcde");
+            var x = seq.SubSequence(3, 1);
+            x.IsMathToken("d");
 
-            var math = CreateSingleSequence(@"\encat { A } \otimes (\encat {B} \otimes \encat{C})");
-            var ar = math.Divide(token).ToArray();
-            ar.Length.Is(1);
+            var y = seq.SubSequence(2).AsMathSequence();
+            y.List.Count.Is(3);
+            y.List[0].IsMathToken("c");
+            y.List[1].IsMathToken("d");
+            y.List[2].IsMathToken("e");
 
-            ar[0].left.AsMathSequence().List.Count.Is(2);
-            ar[0].left.AsMathSequence().List[0].IsMathToken(@"\encat");
-            ar[0].left.AsMathSequence().List[1].AsMathSequence().List.Count.Is(1);
-            ar[0].left.OriginalText.Is(@"\encat { A }");
+            y = seq.SubSequence(1, 3).AsMathSequence();
+            y.List.Count.Is(3);
+            y.List[0].IsMathToken("b");
+            y.List[1].IsMathToken("c");
+            y.List[2].IsMathToken("d");
 
-            ar[0].center.IsMathToken(@"\otimes");
 
-            var seq = (MathSequence)ar[0].right;
-            seq.LeftBracket.TestToken("(");
-            seq.RightBracket.TestToken(")");
-            seq.List.Count.Is(5);
-            seq.List[0].IsMathToken(@"\encat");
-            seq.List[1].ToTokenString().TestString("{B}");
-            seq.List[2].IsMathToken(@"\otimes");
-            seq.List[3].IsMathToken(@"\encat");
-            seq.List[4].ToTokenString().TestString("{C}");
-            seq.OriginalText.Is(@"(\encat {B} \otimes \encat{C})");
+            seq = CreateSingleSequence("(abc){def}(ghi)");
+            y = seq.SubSequence(2).AsMathSequence();
+            y.List.Count.Is(3);
+            y.LeftBracket.TestToken("(");
+            y.RightBracket.TestToken(")");
+            y.Main.TestString("ghi");
 
-            ar = seq.Divide(token).ToArray();
-            ar.Length.Is(1);
-
-            ar[0].left.AsMathSequence().List.Count.Is(2);
-            ar[0].left.AsMathSequence().Main.TestString(@"\encat{B}");
-            ar[0].left.AsMathSequence().ExistsBracket.IsFalse();
-            ar[0].left.OriginalText.Is(@"\encat {B}");
-
-            ar[0].center.IsMathToken(@"\otimes");
-
-            ar[0].right.AsMathSequence().List.Count.Is(2);
-            ar[0].right.AsMathSequence().Main.TestString(@"\encat{C}");
-            ar[0].right.AsMathSequence().ExistsBracket.IsFalse();
-            ar[0].right.OriginalText.Is(@"\encat{C}");
+            y = seq.SubSequence(0, 2).AsMathSequence();
+            y.List.Count.Is(2);
+            y.List[0].AsMathSequence().List.Count.Is(3);
+            y.List[0].AsMathSequence().LeftBracket.TestToken("(");
+            y.List[0].AsMathSequence().RightBracket.TestToken(")");
+            y.List[0].AsMathSequence().Main.TestString("abc");
+            y.List[1].AsMathSequence().List.Count.Is(3);
+            y.List[1].AsMathSequence().LeftBracket.TestToken("{");
+            y.List[1].AsMathSequence().RightBracket.TestToken("}");
+            y.List[1].AsMathSequence().Main.TestString("def");
         }
 
 
 
         private MathSequence CreateSingleSequence(string text)
         {
-            var math = new MathObjectFactory(text).Create().TestSingleMath();
-            math.OriginalText.Is(text);
-            return math;
+            var seq = new MathObjectFactory(text).Create().TestSingleMath();
+            seq.OriginalText.Is(text);
+            return seq;
         }
     }
 }

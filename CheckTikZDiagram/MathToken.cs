@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace CheckTikZDiagram
@@ -17,7 +18,7 @@ namespace CheckTikZDiagram
 
         public MathToken(Token token)
         {
-            Main = new TokenString(token);
+            Main = TokenString.Create(token);
             OriginalText = token.Origin.Trim();
         }
 
@@ -34,7 +35,7 @@ namespace CheckTikZDiagram
             return new MathSequence(this, supOrSub, left, math, right);
         }
 
-        public override IEnumerable<string> GetParameters()
+        public override IEnumerable<string> GetVariables()
         {
             var x = this.ToString();
             if (x == "-")
@@ -54,6 +55,8 @@ namespace CheckTikZDiagram
             }
         }
 
+        public override bool IsCategory() => Config.Instance.Categories.Any(x => this.Main.Tokens.Contains(new Token(x, "")));
+
         public override bool IsSameType(MathObject other, IDictionary<string, MathObject> parameters)
         {
             var x = this.ToString();
@@ -71,34 +74,34 @@ namespace CheckTikZDiagram
             }
         }
 
-        public bool IsSameTypeMain(MathObject other, IDictionary<string, MathObject> parameters, string index)
+        public bool IsSameTypeMain(MathObject other, IDictionary<string, MathObject> parameters, string key)
         {
             if (other is MathToken)
             {
-                if (parameters.ContainsKey(index) && !parameters[index].Equals(other))
+                if (parameters.ContainsKey(key) && !parameters[key].Equals(other))
                 {
                     return false;
                 }
                 else
                 {
-                    parameters[index] = other;
+                    parameters[key] = other;
                 }
             }
             else if (other is MathSequence math)
             {
                 if (math.Sup == null && math.Sub == null
-                    && (!math.ExistsBracket || math.LeftBracket.Value == "(" || math.LeftBracket.Value == "{"))
+                    && (math.LeftBracket.Value == "(" || math.LeftBracket.Value == "{"))
                 {
                     math = new MathSequence(math.List, math.Separator, math.Main.ToOriginalString());
                 }
 
-                if (parameters.ContainsKey(index) && !parameters[index].Equals(math))
+                if (parameters.ContainsKey(key) && !parameters[key].Equals(math))
                 {
                     return false;
                 }
                 else
                 {
-                    parameters[index] = math;
+                    parameters[key] = math;
                 }
             }
 

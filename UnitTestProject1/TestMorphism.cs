@@ -26,8 +26,8 @@ namespace UnitTestProject1
             xs[0].TestMorphism("f", "a", "b", MorphismType.OneMorphism);
             xs[1].TestMorphism("g", "a", "b", MorphismType.OneMorphism);
 
-            Morphism.Create(@"\Hom_{\cat{C}}(a, -)\colon \cat{C}\rightarrow\Set").TestSingle()
-                .TestMorphism(@"\Hom_{\cat{C}}(a,-)", @"\cat{C}", @"\Set", MorphismType.Functor);
+            Morphism.Create(@"\eta_a\colon \id_{\cat{C}}(a)\rightarrow GF(a)").TestSingle()
+                .TestMorphism(@"\eta_a", @"\id_{\cat{C}}(a)", "GF(a)", MorphismType.OneMorphism);
         }
 
         [TestMethod]
@@ -38,7 +38,6 @@ namespace UnitTestProject1
 
             Morphism.Create(@"\theta\colon F\Rightarrow G").TestSingle().TestMorphism(@"\theta", "F", "G", MorphismType.TwoMorphism);
             Morphism.Create(@"\Gamma\colon\theta\Rrightarrow\rho").TestSingle().TestMorphism(@"\Gamma", @"\theta", @"\rho", MorphismType.ThreeMorphism);
-
 
             var xs = Morphism.Create(@"\alpha, \beta, \gamma\colon F\Rightarrow G\colon A\rightarrow B").ToList();
             xs.Count.Is(5);
@@ -109,6 +108,9 @@ namespace UnitTestProject1
 
             Morphism.Create(@"F\colon\opp{\cat{C}}\rightarrow\cat{D}").TestSingle().TestMorphism("F", @"\opp{\cat{C}}", @"\cat{D}", MorphismType.ContravariantFunctor);
             Morphism.Create(@"G\colon\opp{\Set}\rightarrow\opp{\Cat}").TestSingle().TestMorphism("G", @"\opp{\Set}", @"\opp{\Cat}", MorphismType.Functor);
+
+            Morphism.Create(@"\Hom_{\cat{C}}(a, -)\colon \cat{C}\rightarrow\Set").TestSingle()
+                .TestMorphism(@"\Hom_{\cat{C}}(a,-)", @"\cat{C}", @"\Set", MorphismType.Functor);
         }
 
         [TestMethod]

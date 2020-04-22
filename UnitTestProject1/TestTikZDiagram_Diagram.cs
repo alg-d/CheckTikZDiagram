@@ -84,7 +84,7 @@ namespace UnitTestProject1
                 .Where(x => x.IsError)
                 .ToArray();
             xs.Length.Is(1);
-            xs[0].Message.Is("p_i の定義が存在しません");
+            xs[0].Message.Is("p_i: (a) a → (x) u の定義が存在しません");
         }
 
         [TestMethod]
@@ -133,6 +133,70 @@ namespace UnitTestProject1
                 .ToArray();
             xs.Length.Is(1);
             xs[0].Message.Is("p_i: (a) → (x): codomainのnodeが存在しません");
+        }
+
+        [TestMethod]
+        public void Check_nodeの定義の順番()
+        {
+            var tex = @"
+\node (a) at (0, 1.2) {$a$}; \node (x) at (1.2, 1.2) {$x$};
+\node (b) at (0, 0) {$b$};
+
+\draw[->] (a) to node {$\scriptstyle f$} (x);
+\draw[->] (a) to node {$\scriptstyle g$} (b);
+
+\node (y) at (1.2, 0) {$y$};
+
+\draw[->] (x) to node {$\scriptstyle p$} (y);
+\draw[->] (b) to node {$\scriptstyle q$} (y);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { "f".ToTokenString(), ToMorphismHelp("f", "a", "x", MorphismType.OneMorphism) },
+                { "g".ToTokenString(), ToMorphismHelp("g", "a", "b", MorphismType.OneMorphism) },
+                { "p".ToTokenString(), ToMorphismHelp("p", "x", "y", MorphismType.OneMorphism) },
+                { "q".ToTokenString(), ToMorphismHelp("q", "b", "y", MorphismType.OneMorphism) },
+            };
+            CreateTikZDiagram(tex, dic)
+                .CheckDiagram()
+                .TestError();
+        }
+
+        [TestMethod]
+        public void Check改行()
+        {
+            var tex = @"
+\node (a) at (0, 1.2)
+{$a$}; \node (x) at (1.2, 1.2) {$x$};
+\node (b) at (0, 0) {$b$}; \node (y)
+at (1.2, 0) {$y$};
+
+\draw[->] (a) to node {$\scriptstyle f$} (x);
+\draw[->] (a)
+to node {$\scriptstyle g$} (b);
+
+\draw[->] (x) to node {$\scriptstyle p$}
+(y);
+\draw[->]
+(b) to
+node
+{$\scriptstyle q$}
+(y);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { "f".ToTokenString(), ToMorphismHelp("f", "a", "x", MorphismType.OneMorphism) },
+                { "g".ToTokenString(), ToMorphismHelp("g", "a", "b", MorphismType.OneMorphism) },
+                { "p".ToTokenString(), ToMorphismHelp("p", "x", "y", MorphismType.OneMorphism) },
+                { "q".ToTokenString(), ToMorphismHelp("q", "b", "y", MorphismType.OneMorphism) },
+            };
+            CreateTikZDiagram(tex, dic)
+                .CheckDiagram()
+                .TestError();
         }
 
 
@@ -261,8 +325,6 @@ namespace UnitTestProject1
 \draw[->] (C) to node[swap] {$\scriptstyle E$} (M);
 \draw[->] (D) to node[transform canvas={xshift=-6pt}] {$\scriptstyle \Lan{F}E$} (M);
 \draw[->] (D) to node {$\scriptstyle \Ran{F}E$} (M);
-\draw[->] (D) to node {$\scriptstyle \Lift{F}E$} (M);
-\draw[->] (D) to node {$\scriptstyle \Rift{F}E$} (M);
 \end{tikzpicture
 ";
 
@@ -294,6 +356,53 @@ namespace UnitTestProject1
                 { "F".ToTokenString(), ToMorphismHelp("F", @"\cat{C}", @"\cat{D}", MorphismType.Functor) },
                 { "E".ToTokenString(), ToMorphismHelp("E", @"\cat{C}", @"\cat{U}", MorphismType.Functor) },
                 { "K".ToTokenString(), ToMorphismHelp("K", @"\cat{U}", @"\cat{V}", MorphismType.Functor) },
+            };
+            CreateTikZDiagram(tex, dic)
+                .CheckDiagram()
+                .TestError();
+        }
+
+        [TestMethod]
+        public void CheckKanリフト()
+        {
+            var tex = @"
+\node (D) at (0, 1) {$\cat{D}$};
+\node (C) at (0, 0) {$\cat{C}$}; \node (M) at (2, 0) {$\cat{U}$};
+\draw[->] (D) to node {$\scriptstyle F$} (C);
+\draw[->] (M) to node[swap] {$\scriptstyle E$} (C);
+\draw[->] (M) to node[transform canvas={xshift=-6pt}] {$\scriptstyle \Lift{F}E$} (D);
+\draw[->] (M) to node {$\scriptstyle \Rift{F}E$} (D);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { "F".ToTokenString(), ToMorphismHelp("F", @"\cat{D}", @"\cat{C}", MorphismType.Functor) },
+                { "E".ToTokenString(), ToMorphismHelp("E", @"\cat{U}", @"\cat{C}", MorphismType.Functor) },
+            };
+            CreateTikZDiagram(tex, dic)
+                .CheckDiagram()
+                .TestError();
+        }
+
+        [TestMethod]
+        public void CheckKanリフト2()
+        {
+            var tex = @"
+\node (D) at (0, 1) {$\cat{D}$};
+\node (C) at (0, 0) {$\cat{C}$}; \node (M) at (1, 0) {$\cat{U}$}; \node (V) at (3, 0) {$\cat{V}$};
+\draw[->] (D) to node {$\scriptstyle F$} (C);
+\draw[->] (M) to node[swap] {$\scriptstyle E$} (C);
+\draw[->] (V) to node[transform canvas={xshift=-6pt}] {$\scriptstyle (\Lift{F}E)\circ K$} (D);
+\draw[->] (V) to node[swap] {$\scriptstyle K$} (M);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { "F".ToTokenString(), ToMorphismHelp("F", @"\cat{D}", @"\cat{C}", MorphismType.Functor) },
+                { "E".ToTokenString(), ToMorphismHelp("E", @"\cat{U}", @"\cat{C}", MorphismType.Functor) },
+                { "K".ToTokenString(), ToMorphismHelp("K", @"\cat{V}", @"\cat{U}", MorphismType.Functor) },
             };
             CreateTikZDiagram(tex, dic)
                 .CheckDiagram()
@@ -675,16 +784,15 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターAssociatorBicat()
+        public void 変数AssociatorBicat()
         {
             var tex = @"
 \node (123) at (3, 2.8) {$((k\ocmp h)\ocmp g)\ocmp f$};
 \node (213) at (0, 1.5) {$(k\ocmp (h\ocmp g))\ocmp f$}; \node (132) at (6, 1.5) {$(k\ocmp h)\ocmp (g\ocmp f)$};
 \node (312) at (0.4, 0) {$k\ocmp ((h\ocmp g)\ocmp f)$}; \node (321) at (5.6, 0) {$k\ocmp (h\ocmp (g\ocmp f))$};
+\draw[->] (312) to node[swap] {$\scriptstyle k\hcmp\alpha^{abcd}_{hgf}$} (321);
 \draw[->] (123) to node[swap] {$\scriptstyle \alpha^{bcde}_{khg}\hcmp f$} (213);
 \draw[->] (213) to node[swap, yshift=5pt] {$\scriptstyle \alpha^{abde}_{k, h\ocmp g, f}$} (312);
-\draw[->] (312) to node[swap] {$\scriptstyle k\hcmp\alpha^{abcd}_{hgf}$} (321);
-
 \draw[->] (123) to node {$\scriptstyle \alpha^{abce}_{k\ocmp h, g, f}$} (132);
 \draw[->] (132) to node[yshift=5pt] {$\scriptstyle \alpha^{acde}_{k, h, g\ocmp f}$} (321);
 \end{tikzpicture
@@ -706,7 +814,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターAssociatorEncat()
+        public void 変数AssociatorEncat()
         {
             var tex = @"
 \node (abcd1) at (0, 2.2) {$\bigl(\encat{C}(c, d)\otimes\encat{C}(b, c)\bigr)\otimes\encat{C}(a, b)$};
@@ -733,7 +841,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターUnitor()
+        public void 変数Unitor()
         {
             var tex = @"
 \node (g1) at (0, 1.2) {$(g\ocmp\id_b)\ocmp f$}; \node (1f) at (3.4, 1.2) {$g\ocmp(\id_b\ocmp f)$};
@@ -761,7 +869,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターev()
+        public void 変数ev()
         {
             var tex = @"
 \node (a) at (0, 2.4) {$[\Vunit, u]$};
@@ -787,7 +895,40 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターNull()
+        public void 変数括弧()
+        {
+            var tex = @"
+\node (a) at (0, 2) {$[a, u]$}; \node (x) at (1, 2) {$[a, v]$};
+\node (b) at (0, 1) {$[b, u]$}; \node (y) at (1, 1) {$[b, v]$};
+\node (c) at (0, 0) {$[b, [a, u]]$}; \node (z) at (1, 0) {$[b, [a, v]]$};
+\draw[->] (a) to node {$\scriptstyle [a, k]$} (x);
+\draw[<-] (x) to node {$\scriptstyle [f, v]$} (y);
+\draw[<-] (a) to node {$\scriptstyle [f, u]$} (b);
+\draw[->] (b) to node {$\scriptstyle [b, k]$} (y);
+\draw[->] (b) to node {$\scriptstyle [f, k]$} (x);
+\draw[->] (c) to node {$\scriptstyle [b, [a, k]]$} (z);
+\draw[->] (x) to node {$\scriptstyle [a, k^{-1}]$} (a);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { "f".ToTokenString(), Morphism.Create(@"f\colon a\rightarrow b").TestSingle() },
+                { "k".ToTokenString(), Morphism.Create(@"k\colon u\rightarrow v").TestSingle() },
+            };
+
+            var list = ExtensionsInTest.CreateDefaultMorphisms();
+            list.Add(ToMorphismHelp(@"[#1, #2]", @"[#1, #2s]", @"[#1, #2t]", MorphismType.OneMorphism));
+            list.Add(ToMorphismHelp(@"[#1, #2]", @"[#1t, #2]", @"[#1s, #2]", MorphismType.OneMorphism));
+            list.Add(ToMorphismHelp(@"[#1, #2]", @"[#1t, #2s]", @"[#1s, #2t]", MorphismType.OneMorphism));
+
+            new TikZDiagram(tex, -1, false, true, dic, list, Array.Empty<Functor>())
+                .CheckDiagram()
+                .TestError();
+        }
+
+        [TestMethod]
+        public void 変数Null()
         {
             var tex = @"
 \node (a) at (0, 1) {$\Hom_{\cat{C}}(a, b)$}; \node (x) at (0, 1) {$\Hom(a, b)$};
@@ -810,7 +951,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターst()
+        public void ST変数()
         {
             var tex = @"
 \node (a) at (0, 1) {$\Hom_{\cat{C}}(v, a)$}; \node (x) at (0, 1) {$\Hom_{\cat{C}}(u, a)$};
@@ -835,7 +976,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターst_Null()
+        public void ST変数_Null()
         {
             var tex = @"
 \node (a) at (0, 1) {$\Hom(v, a)$}; \node (x) at (0, 1) {$\Hom(u, a)$};
@@ -860,7 +1001,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターst_自然変換()
+        public void ST変数_自然変換()
         {
             var tex = @"
 \node (a) at (0, 1) {$\Hom(Gj, Fi)$}; \node (x) at (0, 1) {$\Hom(Fj, Fi)$};
@@ -903,11 +1044,13 @@ namespace UnitTestProject1
 \end{tikzpicture
 ";
 
-            var dic = new Dictionary<TokenString, Morphism>();
-            dic.Add("f".ToTokenString(), new Morphism("f", @"\dom f", "k", MorphismType.OneMorphism, -1));
-            dic.Add("T".ToTokenString(), new Morphism("T", @"\cat{J}", @"\cat{C}", MorphismType.OneMorphism, -1));
-            dic.Add(@"\id".ToTokenString(), new Morphism(@"\id", @"T(\dom f)", @"Tj", MorphismType.OneMorphism, -1));
-            dic.Add(@"\sigma".ToTokenString(), new Morphism(@"\sigma", @"T", @"\Delta a", MorphismType.NaturalTransformation, -1));
+            var dic = new Dictionary<TokenString, Morphism>
+            {
+                { "f".ToTokenString(), new Morphism("f", @"\dom f", "k", MorphismType.OneMorphism, -1) },
+                { "T".ToTokenString(), new Morphism("T", @"\cat{J}", @"\cat{C}", MorphismType.OneMorphism, -1) },
+                { @"\id".ToTokenString(), new Morphism(@"\id", @"T(\dom f)", @"Tj", MorphismType.OneMorphism, -1) },
+                { @"\sigma".ToTokenString(), new Morphism(@"\sigma", @"T", @"\Delta a", MorphismType.NaturalTransformation, -1) }
+            };
             var list = ExtensionsInTest.CreateDefaultMorphisms();
             list.Add(ToMorphismHelp(@"\eta_{#1}", @"T#1", @"c", MorphismType.OneMorphism));
             list.Add(ToMorphismHelp(@"\mu_{#1}", @"T#1", @"\dcoprod_{j\in\Ob(\cat{J})}Tj", MorphismType.OneMorphism));
@@ -933,11 +1076,162 @@ namespace UnitTestProject1
 \end{tikzpicture
 ";
 
-            var dic = new Dictionary<TokenString, Morphism>();
-            dic.Add("T".ToTokenString(), new Morphism("T", @"\cat{J}", @"\cat{C}", MorphismType.Functor, -1));
-            dic.Add(@"\pi".ToTokenString(), new Morphism(@"\pi", @"\Delta(\lim T)", "T", MorphismType.NaturalTransformation, -1));
-            dic.Add("f".ToTokenString(), new Morphism(@"f", "j", "k", MorphismType.OneMorphism, -1));
+            var dic = new Dictionary<TokenString, Morphism>
+            {
+                { "T".ToTokenString(), new Morphism("T", @"\cat{J}", @"\cat{C}", MorphismType.Functor, -1) },
+                { @"\pi".ToTokenString(), new Morphism(@"\pi", @"\Delta(\lim T)", "T", MorphismType.NaturalTransformation, -1) },
+                { "f".ToTokenString(), new Morphism(@"f", "j", "k", MorphismType.OneMorphism, -1) }
+            };
             var list = ExtensionsInTest.CreateDefaultMorphisms();
+
+            new TikZDiagram(tex, -1, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
+                .CheckDiagram()
+                .TestError();
+        }
+
+        [TestMethod]
+        public void TEST3()
+        {
+            var tex = @"
+\node (a0) at (-4, 5.7) {$((\encat{C}_{cd}\encat{D}_{c'd'})(\encat{C}_{bc}\encat{D}_{b'c'}))(\encat{C}_{ab}\encat{D}_{a'b'})$};
+\node (a1) at (-4, 4.5) {$((\encat{C}_{cd}\encat{C}_{bc})(\encat{D}_{c'd'}\encat{D}_{b'c'}))(\encat{C}_{ab}\encat{D}_{a'b'})$};
+\node (a2) at (-4.8, 2) {$(\encat{C}_{bd}\encat{D}_{b'd'})(\encat{C}_{ab}\encat{D}_{a'b'})$};
+
+\node (b0) at (-2.6, 3.5) {$((\encat{C}_{cd}\encat{C}_{bc})\encat{C}_{ab})((\encat{D}_{c'd'}\encat{D}_{b'c'})\encat{D}_{a'b'})$};
+\node (b1) at (-2.6, 1) {$(\encat{C}_{bd}\encat{C}_{ab})(\encat{D}_{b'd'}\encat{D}_{a'b'})$};
+
+\node (c) at (0, 0) {$\encat{C}_{ad}\encat{D}_{a'd'}$};
+
+\node (d0) at (2.6, 3.5) {$(\encat{C}_{cd}(\encat{C}_{bc}\encat{C}_{ab}))(\encat{D}_{c'd'}(\encat{D}_{b'c'}\encat{D}_{a'b'}))$};
+\node (d1) at (2.6, 1) {$(\encat{C}_{cd}\encat{C}_{ac})(\encat{D}_{c'd'}\encat{D}_{a'c'})$};
+
+\node (e0) at (4, 5.7) {$(\encat{C}_{cd}\encat{D}_{c'd'})((\encat{C}_{bc}\encat{D}_{b'c'})(\encat{C}_{ab}\encat{D}_{a'b'}))$};
+\node (e1) at (4, 4.5) {$(\encat{C}_{cd}\encat{D}_{c'd'})((\encat{C}_{bc}\encat{C}_{ab})(\encat{D}_{b'c'}\encat{D}_{a'b'}))$};
+\node (e2) at (4.8, 2) {$(\encat{C}_{cd}\encat{D}_{c'd'})(\encat{C}_{ac}\encat{D}_{a'c'})$};
+
+\draw[->] (a0) to node[swap] {$\scriptstyle \delta\otimes\id$} (a1);
+\draw[->, transform canvas={xshift=-20pt}] (-4.8, 4.2) to node[yshift=-15pt] {$\scriptstyle (m\otimes m)\otimes\id$} (a2);
+\draw[->] (b0) to node {$\scriptstyle (m\otimes\id)\otimes(m\otimes\id)$} (b1);
+
+\draw[->] (d0) to node[swap] {$\scriptstyle (\id\otimes m)\otimes(\id\otimes m)$} (d1);
+\draw[->, transform canvas={xshift=20pt}] (4.8, 4.2) to node[swap, yshift=-15pt] {$\scriptstyle \id\otimes(m\otimes m)$} (e2);
+\draw[->] (e0) to node {$\scriptstyle \id\otimes\delta$} (e1);
+
+\draw[->] (a1) to node[swap,xshift=-2pt,yshift=2pt] {$\scriptstyle \delta$} (b0);
+\draw[->] (a2) to node[swap,xshift=-2pt,yshift=2pt] {$\scriptstyle \delta$} (b1);
+
+\draw[->] (b0) to node[swap] {$\scriptstyle \alpha\otimes\alpha$} (d0);
+\draw[->] (b1) to node[swap] {$\scriptstyle m\otimes m$} (c);
+\draw[<-] (c) to node[swap] {$\scriptstyle m\otimes m$} (d1);
+
+\draw[<-] (d0) to node[swap,xshift=2pt,yshift=2pt] {$\scriptstyle \delta$} (e1);
+\draw[<-] (d1) to node[swap,xshift=2pt,yshift=2pt] {$\scriptstyle \delta$} (e2);
+
+\draw[->] (a0) to node {$\scriptstyle \alpha$} (e0);
+\end{tikzpicture
+";
+
+
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = ExtensionsInTest.CreateDefaultMorphisms();
+            list.Add(Morphism.Create(@"m_{#1?#2?#3?}\colon\encat{#4}(#2, #3)\otimes \encat{#4}(#1, #2)\rightarrow \encat{#4}(#1, #3)").TestSingle());
+            list.Add(Morphism.Create(@"m_{#1?#2?#3?}\colon\encat{#4}(#2, #3)\otimes \encat{#4}(#1, #2)\rightarrow \encat{#4}(#1, #3)").TestSingle());
+
+            var xs = new TikZDiagram(tex, -1, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
+                .CheckDiagram();
+
+            foreach (var item in xs)
+            {
+                Console.WriteLine(item);
+            }
+
+            0.Is(0);
+        }
+
+        [TestMethod]
+        public void TEST4()
+        {
+            var tex = @"
+\node (abcd) at (2, 2.4) {$\check{\bicat{B}}(c, d)\times\check{\bicat{B}}(b, c)\times\check{\bicat{B}}(a, b)$};
+\node (abd) at (0, 1.2) {$\check{\bicat{B}}(b, d)\times\check{\bicat{B}}(a, b)$};
+\node (acd) at (4, 1.2) {$\check{\bicat{B}}(c, d)\times\check{\bicat{B}}(a, c)$};
+\node (ad) at (2, 0) {$\check{\bicat{B}}(a, d)$};
+\node at (2, 1.2) {$\Extendrightarrow{3}$}; \node at (2, 0.9) {$\scriptstyle \alpha^{abcd}$}; \node at (2, 1.4) {$\scriptstyle \sim$};
+\draw[->] (abcd) to node[swap, yshift=-3pt] {$\scriptstyle M^{bcd}\times\id$} (abd);
+\draw[->] (abd) to node[swap] {$\scriptstyle M^{abd}$} (ad);
+\draw[->] (abcd) to node[yshift=-3pt] {$\scriptstyle \id\times M^{abc}$} (acd);
+\draw[->] (acd) to node {$\scriptstyle M^{acd}$} (ad);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = ExtensionsInTest.CreateDefaultMorphisms();
+            list.Add(Morphism.Create(@"M^{#1#2#3}\colon\check{\bicat{B}}(#2, #3)\times\check{\bicat{B}}(#1, #2)\rightarrow\check{\bicat{B}}(#1, #3)").TestSingle());
+
+            new TikZDiagram(tex, -1, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
+                .CheckDiagram()
+                .TestError();
+        }
+
+        [TestMethod]
+        public void TEST5()
+        {
+            var tex = @"
+\node (z0) at (-2.8, 4.8) {$([v, w][u, v])(ux)$};
+\node (z4) at (-2.8, 0.9) {$([vx, wx][ux, vx])(ux)$};
+
+\node (a2) at (0, 2.4) {$[v, w]([u, v](ux))$};
+\node (a3) at (0, 1.2) {$[v, w]([ux, vx](ux))$};
+\node (a4) at (0, 0) {$[vx, wx]([ux, vx](ux))$};
+
+\node (b1) at (3.3, 3.6) {$(([v, w][u, v])u)x$};
+\node (b2) at (3.3, 2.4) {$[v, w](([u, v]u)x)$};
+\node (b3) at (3.3, 1.2) {$[v, w](vx)$};
+\node (b4) at (3.3, 0) {$[vx, wx](vx)$};
+
+\node (c0) at (6.2, 4.8) {$[u, w](ux)$};
+\node (c1) at (6.2, 3.6) {$([u, w]u)x$};
+\node (c2) at (6.2, 2.4) {$([v, w]([u, v]u))x$};
+\node (c3) at (6.2, 1.2) {$([v, w]v)x$};
+\node (c4) at (6.2, 0) {$wx$};
+
+\draw[->] (z0) to node {$\scriptstyle (F\otimes F)\otimes(\id\otimes\id)$} (z4);
+
+\draw[->] (a2) to node[swap] {$\scriptstyle \id\otimes (F\otimes\id)$} (a3);
+\draw[->] (a3) to node[swap] {$\scriptstyle F\otimes (\id\otimes\id)$} (a4);
+
+\draw[->] (b2) to node[swap] {$\scriptstyle \id\otimes (\ev\otimes\id)$} (b3);
+\draw[->] (b3) to node[swap] {$\scriptstyle F\otimes (\id\otimes\id)$} (b4);
+
+\draw[->] (c0) to node[swap] {$\scriptstyle \alpha^{-1}$} (c1);
+\draw[->] (c2) to node[swap] {$\scriptstyle (\id\otimes\ev)\otimes\id$} (c3);
+\draw[->] (c3) to node[swap] {$\scriptstyle \ev\otimes\id$} (c4);
+\draw[->] (c1) to node[swap] {$\scriptstyle \ev\otimes\id$} (7.5, 0) to (c4);
+
+
+\draw[->] (z0) to node {$\scriptstyle m\otimes(\id\otimes\id)$} (c0);
+\draw[->] (z0) to node {$\scriptstyle \alpha^{-1}$} (b1);
+\draw[->] (z0) to node {$\scriptstyle \alpha$} (a2);
+\draw[->] (z4) to (-2.8, 0) to node[swap] {$\scriptstyle \alpha$} (a4);
+
+\draw[->] (a2) to node[swap] {$\scriptstyle \id\otimes\alpha^{-1}$} (b2);
+\draw[->] (a3) to node[swap] {$\scriptstyle \id\otimes\ev$} (b3);
+\draw[->] (a4) to node[swap] {$\scriptstyle \id\otimes\ev$} (b4);
+
+\draw[->] (b1) to node {$\scriptstyle (m\otimes\id)\otimes\id$} (c1);
+\draw[->] (b1) to node[swap, xshift=-3pt, yshift=3pt] {$\scriptstyle \alpha\otimes\id$} (c2);
+\draw[->] (b2) to node {$\scriptstyle \alpha^{-1}$} (c2);
+\draw[->] (b3) to node[swap] {$\scriptstyle \alpha^{-1}$} (c3);
+\draw[->] (b4) to node[swap] {$\scriptstyle \ev$} (c4);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = ExtensionsInTest.CreateDefaultMorphisms();
+            list.Add(Morphism.Create(@"\alpha^{#1?}_{#2?#3?#4?}\colon (#2#3)#4\rightarrow #2(#3#4)").TestSingle());
+            list.Add(Morphism.Create(@"F\colon [#1, #2]\rightarrow [#1 x, #2 x]").TestSingle());
+            list.Add(Morphism.Create(@"\ev\colon [#1, #2]#1\rightarrow #2").TestSingle());
+            list.Add(Morphism.Create(@"m_{#1?#2?#3?}\colon [#2, #3][#1, #2]\rightarrow [#1, #3]").TestSingle());
 
             new TikZDiagram(tex, -1, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
                 .CheckDiagram()

@@ -115,8 +115,7 @@ namespace UnitTestProject1
                 .TestMorphism(@"\theta_{k}", "u", "v", MorphismType.OneMorphism);
 
             tikz.CreateMorphism(@"\beta_x")
-                //.TestMorphism(@"\beta_{x}", @"\id_{\cat{C}}(x)", "RL(x)", MorphismType.OneMorphism);
-                .TestMorphism(@"\beta_{x}", @"\id_{\cat{C}}(x)", "RL(x)", MorphismType.Functor);
+                .TestMorphism(@"\beta_{x}", @"\id_{\cat{C}}(x)", "RL(x)", MorphismType.OneMorphism);
         }
 
         [TestMethod]
@@ -175,34 +174,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphism関手適用_2変数()
-        {
-            var dic = new Dictionary<TokenString, Morphism>()
-            {
-                { "T".ToTokenString(), ToMorphismHelp("T", @"\cat{A}\times\cat{B}", @"\cat{C}", MorphismType.Bifunctor)},
-                { "f".ToTokenString(), ToMorphismHelp("f", "a", "b", MorphismType.OneMorphism)},
-                { "g".ToTokenString(), ToMorphismHelp("g", @"\widehat{c}", @"\widehat{d}", MorphismType.OneMorphism)},
-            };
-            var tikz = CreateTikZDiagram(dic);
-
-            tikz.CreateMorphism("T(f, g)")
-                .TestMorphism("T(f, g)", @"T(a, \widehat{c})", @"T(b, \widehat{d})", MorphismType.OneMorphism);
-
-            tikz.CreateMorphism("T(g, f)")
-                .TestMorphism("T(g, f)", @"T(\widehat{c}, a)", @"T(\widehat{d}, b)", MorphismType.OneMorphism);
-
-            tikz.CreateMorphism("T(f, x)", "T(a, x)", "T(b, x)")
-                .TestMorphism("T(f, x)", "T(a, x)", "T(b, x)", MorphismType.OneMorphism);
-
-            tikz.CreateMorphism(@"T(\test, f)", @"T(\test, a)", @"T(\test, b)")
-                .TestMorphism(@"T(\test, f)", @"T(\test, a)", @"T(\test, b)", MorphismType.OneMorphism);
-
-            tikz.CreateMorphism("T(g, uv)", @"T(\widehat{c}, uv)", @"T(\widehat{d}, uv)")
-                .TestMorphism("T(g, uv)", @"T(\widehat{c}, uv)", @"T(\widehat{d}, uv)", MorphismType.OneMorphism);
-        }
-
-        [TestMethod]
-        public void Morphism二変数関手適用()
+        public void Morphism関手適用_2変数1()
         {
             var dic = new Dictionary<TokenString, Morphism>()
             {
@@ -226,6 +198,33 @@ namespace UnitTestProject1
 
             tikz.CreateMorphism(@"T(\id, f)", "T(a, a)", "T(a, b)")
                 .TestMorphism(@"T(\id, f)", "T(a, a)", "T(a, b)", MorphismType.OneMorphism);
+        }
+
+        [TestMethod]
+        public void Morphism関手適用_2変数2()
+        {
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { "T".ToTokenString(), ToMorphismHelp("T", @"\cat{A}\times\cat{B}", @"\cat{C}", MorphismType.Bifunctor)},
+                { "f".ToTokenString(), ToMorphismHelp("f", "a", "b", MorphismType.OneMorphism)},
+                { "g".ToTokenString(), ToMorphismHelp("g", @"\widehat{c}", @"\widehat{d}", MorphismType.OneMorphism)},
+            };
+            var tikz = CreateTikZDiagram(dic);
+
+            tikz.CreateMorphism("T(f, g)")
+                .TestMorphism("T(f, g)", @"T(a, \widehat{c})", @"T(b, \widehat{d})", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism("T(g, f)")
+                .TestMorphism("T(g, f)", @"T(\widehat{c}, a)", @"T(\widehat{d}, b)", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism("T(f, x)", "T(a, x)", "T(b, x)")
+                .TestMorphism("T(f, x)", "T(a, x)", "T(b, x)", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism(@"T(\test, f)", @"T(\test, a)", @"T(\test, b)")
+                .TestMorphism(@"T(\test, f)", @"T(\test, a)", @"T(\test, b)", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism("T(g, uv)", @"T(\widehat{c}, uv)", @"T(\widehat{d}, uv)")
+                .TestMorphism("T(g, uv)", @"T(\widehat{c}, uv)", @"T(\widehat{d}, uv)", MorphismType.OneMorphism);
         }
 
         [TestMethod]
@@ -271,6 +270,61 @@ namespace UnitTestProject1
                 @"(P(a)\otimes R(b))\otimes Fi",
                 @"(Q(a)\otimes S(b))\otimes Gi",
                 MorphismType.OneMorphism);
+
+            mor = tikz.CreateMorphism(@"\sigma_a\otimes(\tau_b\otimes\beta_i)", @"P(a)\otimes(R(b)\otimes Fi)", @"Q(a)\otimes (S(b)\otimes Gi)");
+            mor.TestMorphism(
+                @"\sigma_a\otimes (\tau_b\otimes\beta_i)",
+                @"P(a)\otimes (R(b)\otimes Fi)",
+                @"Q(a)\otimes (S(b)\otimes Gi)",
+                MorphismType.OneMorphism);
+        }
+
+        [TestMethod]
+        public void Morphism二項演算_省略()
+        {
+            var mor1 = ToMorphismHelp(@"f", "a", "b", MorphismType.OneMorphism);
+            var mor2 = ToMorphismHelp(@"g", "s", "t", MorphismType.OneMorphism);
+            var mor3 = ToMorphismHelp(@"X", @"\test{A}", @"\test{B}", MorphismType.OneMorphism);
+            var mor4 = ToMorphismHelp(@"Y", @"\test{C}", @"\test{D}", MorphismType.OneMorphism);
+            var mor5 = ToMorphismHelp(@"\beta_i", "Fi", "Gi", MorphismType.OneMorphism);
+            var mor6 = ToMorphismHelp(@"\gamma_j", "Kj", "Lj", MorphismType.OneMorphism);
+            var mor7 = ToMorphismHelp(@"\sigma", "P", "Q", MorphismType.NaturalTransformation);
+            var mor8 = ToMorphismHelp(@"\tau", "R", "S", MorphismType.NaturalTransformation);
+
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { mor1.Name.ToTokenString(), mor1 },
+                { mor2.Name.ToTokenString(), mor2 },
+                { mor3.Name.ToTokenString(), mor3 },
+                { mor4.Name.ToTokenString(), mor4 },
+                { mor5.Name.ToTokenString(), mor5 },
+                { mor6.Name.ToTokenString(), mor6 },
+                { mor7.Name.ToTokenString(), mor7 },
+                { mor8.Name.ToTokenString(), mor8 },
+            };
+            var tikz = CreateTikZDiagram(dic);
+
+            var mor = tikz.CreateMorphism(@"f\otimes g", @"as", @"bt");
+            mor.TestMorphism(@"f\otimes g", @"as", @"bt", MorphismType.OneMorphism);
+
+            mor = tikz.CreateMorphism(@"X\otimes Y", @"(\test{A})(\test{C})", @"(\test{B})(\test{D})");
+            mor.TestMorphism(@"X\otimes Y", @"(\test{A})(\test{C})", @"(\test{B})(\test{D})", MorphismType.OneMorphism);
+
+            mor = tikz.CreateMorphism(@"\beta_i\otimes\gamma_j", @"(Fi)(Kj)", @"(Gi)(Lj)");
+            mor.TestMorphism(@"\beta_i\otimes\gamma_j", @"(Fi)(Kj)", @"(Gi)(Lj)", MorphismType.OneMorphism);
+
+            mor = tikz.CreateMorphism(@"\sigma_a\otimes\tau_b", @"(Pa)(Rb)", @"(Qa)(Sb)");
+            mor.TestMorphism(@"\sigma_a\otimes\tau_b", @"(P(a))(R(b))", @"(Q(a))(S(b))", MorphismType.OneMorphism);
+
+            mor = tikz.CreateMorphism(@"(\sigma_a\otimes\tau_b)\otimes\beta_i", @"((Pa)(Rb))(Fi)", @"((Qa)(Sb))(Gi)");
+            mor.TestMorphism(
+                @"(\sigma_a\otimes\tau_b)\otimes\beta_i", @"((P(a))(R(b)))(Fi)", @"((Q(a))(S(b)))(Gi)",
+                MorphismType.OneMorphism);
+
+            mor = tikz.CreateMorphism(@"\sigma_a\otimes(\tau_b\otimes\beta_i)", @"(Pa)((Rb)(Fi))", @"(Qa)((Sb)(Gi))");
+            mor.TestMorphism(
+                @"\sigma_a\otimes (\tau_b\otimes\beta_i)", @"(P(a))((R(b))(Fi))", @"(Q(a))((S(b))(Gi))",
+                MorphismType.OneMorphism);
         }
 
         [TestMethod]
@@ -279,12 +333,16 @@ namespace UnitTestProject1
             var mor1 = ToMorphismHelp(@"\Hom(x, -)", @"\cat{C}", @"\Set", MorphismType.Functor);
             var mor2 = ToMorphismHelp(@"\Hom_{\cat{D}}(-, x)", @"\cat{D}", @"\Set", MorphismType.ContravariantFunctor);
             var mor3 = ToMorphismHelp(@"f", "a", "b", MorphismType.OneMorphism);
+            var mor4 = ToMorphismHelp(@"-\otimes v", @"\moncat{V}", @"\moncat{V}", MorphismType.Functor);
+            var mor5 = ToMorphismHelp(@"u\otimes -", @"\moncat{V}", @"\moncat{V}", MorphismType.Functor);
 
             var dic = new Dictionary<TokenString, Morphism>()
             {
                 { mor1.Name.ToTokenString(), mor1 },
                 { mor2.Name.ToTokenString(), mor2 },
                 { mor3.Name.ToTokenString(), mor3 },
+                { mor4.Name.ToTokenString(), mor4 },
+                { mor5.Name.ToTokenString(), mor5 },
             };
             var tikz = CreateTikZDiagram(dic);
 
@@ -292,8 +350,13 @@ namespace UnitTestProject1
             mor.TestMorphism(@"\Hom(x, f)", @"\Hom(x, a)", @"\Hom(x, b)", MorphismType.OneMorphism);
 
             mor = tikz.CreateMorphism(@"\Hom_{\cat{D}}(f, x)");
-            //mor.TestMorphism(@"\Hom_{\cat{D}}(f, x)", @"\Hom_{\cat{D}}(b, x)", @"\Hom_{\cat{D}}(a, x)", MorphismType.OneMorphism);
-            mor.TestMorphism(@"\Hom_{\cat{D}}(f, x)", @"\Hom_{\cat{D}}(b, x)", @"\Hom_{\cat{D}}(a, x)", MorphismType.Functor);
+            mor.TestMorphism(@"\Hom_{\cat{D}}(f, x)", @"\Hom_{\cat{D}}(b, x)", @"\Hom_{\cat{D}}(a, x)", MorphismType.OneMorphism);
+
+            mor = tikz.CreateMorphism(@"f\otimes v");
+            mor.TestMorphism(@"f\otimes v", @"a\otimes v", @"b\otimes v", MorphismType.OneMorphism);
+
+            mor = tikz.CreateMorphism(@"u\otimes f");
+            mor.TestMorphism(@"u\otimes f", @"u\otimes a", @"u\otimes b", MorphismType.OneMorphism);
         }
 
         [TestMethod]
@@ -319,7 +382,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーター1()
+        public void 変数1()
         {
             var mor = ToMorphismHelp(@"\test{#1}", "F(#1)", "G(#1)", MorphismType.OneMorphism);
 
@@ -344,7 +407,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーター3()
+        public void 変数3()
         {
             var mor = ToMorphismHelp(@"M^{#1#2#3}", @"\bicat{B}(#2, #3)\times\bicat{B}(#1, #2)", @"\bicat{B}(#1, #3)", MorphismType.Bifunctor);
 
@@ -369,7 +432,32 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターAssociator_NotNull()
+        public void 変数dom_codのみにある変数()
+        {
+            var mor = ToMorphismHelp(@"M^{#1#2#3}", @"\bicat{#4}(#2, #3)\times\bicat{#4}(#1, #2)", @"\bicat{#4}(#1, #3)", MorphismType.Bifunctor);
+
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = new List<Morphism>()
+            {
+                mor,
+            };
+            var tikz = new TikZDiagram("", -1, false, true, dic, list, Array.Empty<Functor>());
+
+            tikz.CreateMorphism(@"M^{abc}", @"\bicat{B}(b, c)\times\bicat{B}(a, b)", @"\bicat{B}(a, c)")
+                .TestMorphism(@"M^{abc}", @"\bicat{B}(b, c)\times\bicat{B}(a, b)", @"\bicat{B}(a, c)", MorphismType.Bifunctor);
+
+            tikz.CreateMorphism(@"M^{ace}", @"\bicat{B}(c, e)\times\bicat{B}(a, c)", @"\bicat{B}(a, e)")
+                .TestMorphism(@"M^{ace}", @"\bicat{B}(c, e)\times\bicat{B}(a, c)", @"\bicat{B}(a, e)", MorphismType.Bifunctor);
+
+            tikz.CreateMorphism(@"M^{abb}", @"\bicat{B}(b, b)\times\bicat{B}(a, b)", @"\bicat{B}(a, b)")
+                .TestMorphism(@"M^{abb}", @"\bicat{B}(b, b)\times\bicat{B}(a, b)", @"\bicat{B}(a, b)", MorphismType.Bifunctor);
+
+            tikz.CreateMorphism(@"M^{Fa, Fb, Fc}", @"\bicat{C}(Fb, Fc)\times\bicat{C}(Fa, Fb)", @"\bicat{C}(Fa, Fc)")
+                .TestMorphism(@"M^{Fa, Fb, Fc}", @"\bicat{C}(Fb, Fc)\times\bicat{C}(Fa, Fb)", @"\bicat{C}(Fa, Fc)", MorphismType.Bifunctor);
+        }
+
+        [TestMethod]
+        public void 変数Associator_NotNull()
         {
             var dic = new Dictionary<TokenString, Morphism>();
             var list = new List<Morphism>()
@@ -384,7 +472,7 @@ namespace UnitTestProject1
             tikz.CreateMorphism(@"\alpha^x_{u, v\otimes w, x}")
                 .TestMorphism(@"\alpha^x_{u, v\otimes w, x}", @"(u\otimes (v\otimes w))\otimes x", @"u\otimes((v\otimes w)\otimes x)", MorphismType.OneMorphism);
 
-            tikz.CreateMorphism(@"(\alpha_{abc}^x)^{-1}", @"a\otimes(b\otimes c)")
+            tikz.CreateMorphism(@"(\alpha_{abc}^x)^{-1}")
                 .TestMorphism(@"(\alpha_{abc}^x)^{-1}", @"a\otimes(b\otimes c)", @"(a\otimes b)\otimes c", MorphismType.OneMorphism);
 
             tikz.CreateMorphism(@"\alpha^x_{Fu, Fv, Fw}")
@@ -392,7 +480,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターAssociator_Null()
+        public void 変数Associator_Null()
         {
             var dic = new Dictionary<TokenString, Morphism>();
             var list = new List<Morphism>()
@@ -418,7 +506,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターLeftUnitor()
+        public void 変数LeftUnitor()
         {
             var dic = new Dictionary<TokenString, Morphism>();
             var list = new List<Morphism>()
@@ -441,7 +529,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターLeftUnitor2()
+        public void 変数LeftUnitor2()
         {
             var dic = new Dictionary<TokenString, Morphism>();
             var list = new List<Morphism>()
@@ -458,7 +546,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーターRightUnitor()
+        public void 変数RightUnitor()
         {
             var dic = new Dictionary<TokenString, Morphism>();
             var list = new List<Morphism>()
@@ -478,6 +566,97 @@ namespace UnitTestProject1
 
             tikz.CreateMorphism(@"\rho", @"x\otimes \Vunit", "x")
                 .TestMorphism(@"\rho", @"x\otimes \Vunit", @"x", MorphismType.OneMorphism);
+        }
+
+        [TestMethod]
+        public void 変数二項演算()
+        {
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = ExtensionsInTest.CreateDefaultMorphisms();
+            list.Add(ToMorphismHelp(@"\rho^{#1?}_{#2?}", @"#2\otimes\Vunit", @"#2", MorphismType.OneMorphism));
+            list.Add(ToMorphismHelp(@"\rho^{#1?}_{#2?}", @"#2\Vunit", @"#2", MorphismType.OneMorphism));
+
+            var tikz = new TikZDiagram("", -1, false, true, dic, list, Array.Empty<Functor>());
+
+            tikz.CreateMorphism(@"\rho^{ab}_x\otimes\rho_u", @"(x\otimes \Vunit)\otimes (u\otimes \Vunit)", @"x\otimes u")
+                .TestMorphism(@"\rho^{ab}_x\otimes\rho_u", @"(x\otimes \Vunit)\otimes (u\otimes \Vunit)", @"x\otimes u", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism(@"\id\otimes\rho^{ab}_x", @"a\otimes (x\otimes \Vunit)", @"a \otimes x")
+                .TestMorphism(@"\id\otimes\rho^{ab}_x", @"a\otimes (x\otimes \Vunit)", @"a \otimes x", MorphismType.OneMorphism);
+        }
+
+        [TestMethod]
+        public void 変数二項演算_省略1()
+        {
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = ExtensionsInTest.CreateDefaultMorphisms();
+            list.Add(Morphism.Create(@"f\colon u\rightarrow v").TestSingle());
+            list.Add(Morphism.Create(@"g\colon s\rightarrow t").TestSingle());
+
+            var tikz = new TikZDiagram("", -1, false, true, dic, list, Array.Empty<Functor>());
+
+            tikz.CreateMorphism(@"f\otimes g")
+                .TestMorphism(@"f\otimes g", @"u\otimes s", @"v\otimes t", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism(@"f\otimes g", @"us", @"vt")
+                .TestMorphism(@"f\otimes g", @"us", @"vt", MorphismType.OneMorphism);
+        }
+
+        [TestMethod]
+        public void 変数二項演算_省略2()
+        {
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = ExtensionsInTest.CreateDefaultMorphisms();
+            list.Add(ToMorphismHelp(@"\rho^{#1?}_{#2?}", @"#2\otimes\Vunit", @"#2", MorphismType.OneMorphism));
+            list.Add(ToMorphismHelp(@"\rho^{#1?}_{#2?}", @"#2\Vunit", @"#2", MorphismType.OneMorphism));
+            list.Add(ToMorphismHelp(@"\lambda^{#1?}_{#2?}", @"\Vunit #2", @"#2", MorphismType.OneMorphism));
+
+            var tikz = new TikZDiagram("", -1, false, true, dic, list, Array.Empty<Functor>());
+
+            tikz.CreateMorphism(@"\rho^{ab}_x\otimes\rho_u", @"(x\Vunit)(u\Vunit)", @"xu")
+                .TestMorphism(@"\rho^{ab}_x\otimes\rho_u", @"(x\Vunit)(u\Vunit)", @"xu", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism(@"\id\otimes\rho^{ab}_x", @"a(x\Vunit)", @"ax")
+                .TestMorphism(@"\id\otimes\rho^{ab}_x", @"a(x\Vunit)", @"ax", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism(@"\lambda\otimes(\id\otimes\rho)", @"(\Vunit a)(s(x\Vunit))", @"a(sx)")
+                .TestMorphism(@"\lambda\otimes(\id\otimes\rho)", @"(\Vunit a)(s(x\Vunit))", @"a(sx)", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism(@"\lambda", @"\Vunit \encat{C}_{ab}", @"\encat{C}_{ab}")
+                .TestMorphism(@"\lambda", @"\Vunit \encat{C}_{ab}", @"\encat{C}_{ab}", MorphismType.Functor);
+
+            tikz.CreateMorphism(@"\id\otimes\rho",
+                @"\encat{C}_{st}(\encat{C}_{xz}\Vunit)",
+                @"\encat{C}_{st}\encat{C}_{xz}")
+                .TestMorphism(@"\id\otimes\rho",
+                @"\encat{C}_{st}(\encat{C}_{xz}\Vunit)",
+                @"\encat{C}_{st}\encat{C}_{xz}", MorphismType.Functor);
+
+            tikz.CreateMorphism(@"\lambda\otimes(\id\otimes\rho)",
+                @"(\Vunit \encat{C}_{ab})(\encat{C}_{st}(\encat{C}_{xz}\Vunit))",
+                @"\encat{C}_{ab}(\encat{C}_{st}\encat{C}_{xz})")
+                .TestMorphism(@"\lambda\otimes(\id\otimes\rho)",
+                @"(\Vunit \encat{C}_{ab})(\encat{C}_{st}(\encat{C}_{xz}\Vunit))",
+                @"\encat{C}_{ab}(\encat{C}_{st}\encat{C}_{xz})", MorphismType.Functor);
+        }
+
+        [TestMethod]
+        public void 変数二項演算_省略3()
+        {
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = ExtensionsInTest.CreateDefaultMorphisms();
+            list.Add(Morphism.Create(@"\alpha^{#1?}_{#2?#3?#4?}\colon ((#2)(#3))(#4)\rightarrow (#2)((#3)(#4))").TestSingle());
+
+            var tikz = new TikZDiagram("", -1, false, true, dic, list, Array.Empty<Functor>());
+
+            tikz.CreateMorphism(@"\alpha",
+                @"((\encat{C}_{cd}\encat{D}_{c'd'})(\encat{C}_{bc}\encat{D}_{b'c'}))(\encat{C}_{ab}\encat{D}_{a'b'})",
+                @"(\encat{C}_{cd}\encat{D}_{c'd'})((\encat{C}_{bc}\encat{D}_{b'c'})(\encat{C}_{ab}\encat{D}_{a'b'}))"
+            ).TestMorphism(@"\alpha",
+                @"((\encat{C}_{cd}\encat{D}_{c'd'})(\encat{C}_{bc}\encat{D}_{b'c'}))(\encat{C}_{ab}\encat{D}_{a'b'})",
+                @"(\encat{C}_{cd}\encat{D}_{c'd'})((\encat{C}_{bc}\encat{D}_{b'c'})(\encat{C}_{ab}\encat{D}_{a'b'}))",
+                MorphismType.Functor
+            );
         }
 
 

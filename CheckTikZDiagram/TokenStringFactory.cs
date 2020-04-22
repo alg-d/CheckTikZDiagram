@@ -43,14 +43,7 @@ namespace CheckTikZDiagram
                 AddToken(_temp.ToString(), _supOrSubFlag);
             }
 
-            if (_tokens.Count == 0)
-            {
-                return TokenString.Empty;
-            }
-            else
-            {
-                return new TokenString(_tokens);
-            }
+            return _tokens.ToTokenString();
         }
 
         private void TexCommandMode(char x)
@@ -160,6 +153,13 @@ namespace CheckTikZDiagram
             else if (x == '\r' || x == '\n')
             {
                 _origin.Append(' ');
+            }
+            else if (x == '\'')
+            {
+                // ' は ^ { \prime } とみなす
+                _tokens.Add(new Token("^", ""));
+                _origin.Append(x);
+                AddToken(@"\prime", true);
             }
             else
             {

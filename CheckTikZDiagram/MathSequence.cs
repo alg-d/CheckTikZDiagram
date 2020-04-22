@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace CheckTikZDiagram
@@ -72,11 +71,9 @@ namespace CheckTikZDiagram
         /// <param name="list">MathObjectを構成するMathObject列</param>
         public MathSequence(IList<MathObject> list, string separator = "", string originalText = "")
         {
-            if (list.Count == 0) throw new InvalidOperationException($"{nameof(list)}が空です。");
-
             List = new ReadOnlyCollection<MathObject>(list);
             Separator = separator;
-            Main = TokenString.Join(separator, list.Select(x => x.ToTokenString()));
+            Main = CreateMainTokenString(List, separator);
 
             _toTokenString = Main;
             _toString = Main.ToString();
@@ -139,7 +136,7 @@ namespace CheckTikZDiagram
             if (list.Count == 0) throw new InvalidOperationException($"{nameof(list)}が空です。");
 
             List = new ReadOnlyCollection<MathObject>(list);
-            Main = TokenString.Join(seq.Separator, list.Select(x => x.ToTokenString()));
+            Main = CreateMainTokenString(List, seq.Separator);
             _toTokenString = ConstructorHelperBracket(seq.LeftBracket, Main, seq.RightBracket);
 
             Sup = sup;
@@ -213,6 +210,18 @@ namespace CheckTikZDiagram
         }
         #endregion
 
+        private TokenString CreateMainTokenString(ReadOnlyCollection<MathObject> list, string separator)
+        {
+            if (List.Count == 0)
+            {
+                return TokenString.Empty;
+            }
+            else
+            {
+                return TokenString.Join(separator, list.Select(x => x.ToTokenString()));
+            }
+        }
+
         private TokenString ConstructorHelperSupSub(TokenString main, Token supOrSub, Token left, TokenString inBracket, Token right)
         {
             var list = new List<Token>();
@@ -223,7 +232,7 @@ namespace CheckTikZDiagram
             list.AddRange(inBracket.Tokens);
             list.Add(right);
 
-            return new TokenString(list);
+            return list.ToTokenString();
         }
 
         private TokenString ConstructorHelperSupSub(TokenString main, Token supOrSub, TokenString inBracket)
@@ -239,7 +248,7 @@ namespace CheckTikZDiagram
             list.AddRange(main.Tokens);
             list.Add(right);
 
-            return new TokenString(list);
+            return list.ToTokenString();
         }
 
         public override MathSequence SetBracket(Token left, Token right)
@@ -289,9 +298,9 @@ namespace CheckTikZDiagram
             }
         }
 
-        public MathSequence CopyWithoutSup()
+        public MathObject CopyWithoutSup()
         {
-            var result = new MathSequence(this.List, this.Separator);
+            var result = this.List.Count == 1 ? this.List[0] : new MathSequence(this.List, this.Separator);
             if (this.ExistsBracket)
             {
                 result = result.SetBracket(this.LeftBracket, this.RightBracket);
@@ -303,9 +312,9 @@ namespace CheckTikZDiagram
             return result;
         }
 
-        public MathSequence CopyWithoutSub()
+        public MathObject CopyWithoutSub()
         {
-            var result = new MathSequence(this.List, this.Separator);
+            var result = this.List.Count == 1 ? this.List[0] : new MathSequence(this.List, this.Separator);
             if (this.ExistsBracket)
             {
                 result = result.SetBracket(this.LeftBracket, this.RightBracket);
@@ -317,99 +326,71 @@ namespace CheckTikZDiagram
             return result;
         }
 
-        public override IEnumerable<string> GetParameters()
+        public MathObject CopyWithoutScript()
         {
-            var list = this.List.SelectMany(x => x.GetParameters());
+            var result = this.List.Count == 1 ? this.List[0] : new MathSequence(this.List, this.Separator);
+            if (this.ExistsBracket)
+            {
+                result = result.SetBracket(this.LeftBracket, this.RightBracket);
+            }
+            return result;
+        }
+
+        public override IEnumerable<string> GetVariables()
+        {
+            var list = this.List.SelectMany(x => x.GetVariables());
 
             if (this.Sup != null)
             {
-                list = list.Concat(this.Sup.GetParameters());
+                list = list.Concat(this.Sup.GetVariables());
             }
 
             if (this.Sub != null)
             {
-                list = list.Concat(this.Sub.GetParameters());
+                list = list.Concat(this.Sub.GetVariables());
             }
 
             return list;
         }
 
+        public override bool IsCategory() => this.List.Any(m => m.IsCategory());
+
         public override bool IsSameType(MathObject other, IDictionary<string, MathObject> parameters)
         {
             return other switch
             {
-                MathSequence seq => IsSameType(seq, parameters),
-                MathToken token => IsSameType(token, parameters),
+                MathSequence seq => IsSameType_Sequence(seq, parameters),
+                MathToken token => IsSameType_Token(token, parameters),
                 _ => false,
             };
         }
 
-        private bool IsSameType(MathSequence other, IDictionary<string, MathObject> parameters)
+        private bool IsSameType_Sequence(MathSequence other, IDictionary<string, MathObject> parameters)
         {
             // 上付き添え字についての判定
-            if (this.Sup == null)
-            {
-                if (other.Sup != null) return false;
-            }
-            else
-            {
-                if (other.Sup == null)
-                {
-                    if (!this.Sup.Main.EndsWith('?'))
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    if (!this.Sup.IsSameType(other.Sup, parameters)) return false;
-                }
-            }
+            if (!IsSameType_Script(this.Sup, other.Sup, parameters)) return false;
 
             // 下付き添え字についての判定
-            if (this.Sub == null)
+            if (!IsSameType_Script(this.Sub, other.Sub, parameters)) return false;
+
+            // 括弧のについての判定
+            if (this.ExistsBracket && !RemovableBracket(this.LeftBracket, this.RightBracket))
             {
-                if (other.Sub != null) return false;
-            }
-            else
-            {
-                if (other.Sub == null)
-                {
-                    if (!this.Sub.Main.EndsWith('?'))
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    if (!this.Sub.IsSameType(other.Sub, parameters)) return false;
-                }
+                if (!this.LeftBracket.Equals(other.LeftBracket) || !this.RightBracket.Equals(other.RightBracket)) return false;
             }
 
-            // 本体の判定
-            if (!this.Separator.IsNullOrEmpty())
-            {
-                if (this.Separator != other.Separator) return false;
-            }
+            // 本体についての判定
+            if (!this.Separator.IsNullOrEmpty() && this.Separator != other.Separator) return false;
 
-            if (this.List.Count == 1)
-            {
-                if (this.List[0].IsSameType(new MathSequence(other.List), parameters))
-                {
-                    return true;
-                }
-            }
-
+            if (this.List.Count == 1 && this.List[0].IsSameType(other.CopyWithoutScript(), parameters)) return true;
+            
             if (this.List.Count > other.List.Count) return false;
 
             var temp_j = 0;
             for (int i = 0; i < this.List.Count; i++)
             {
                 // other側の長さが足りなくなった場合
-                if (temp_j >= other.List.Count)
-                {
-                    return false;
-                }
+                if (temp_j >= other.List.Count) return false;
 
                 // i番目がMathSequenceの場合
                 if (this.List[i] is MathSequence)
@@ -420,7 +401,7 @@ namespace CheckTikZDiagram
                 }
 
                 // i番目がMathTokenでパラメーター無しの場合
-                if (!this.List[i].HasParameter())
+                if (!this.List[i].HasVariables())
                 {
                     if (this.List[i].Equals(other.List[temp_j]))
                     {
@@ -434,21 +415,18 @@ namespace CheckTikZDiagram
                 }
 
                 // i番目がMathTokenでパラメーター有りの場合
-                if (i < this.List.Count - 1)
+                if (i == this.List.Count - 1)
                 {
-                    // 次がパラメーターの場合
-                    if (this.List[i + 1].HasParameter())
-                    {
-                        if (!this.List[i].IsSameType(other.List[temp_j], parameters)) return false;
-                        temp_j++;
-                        continue;
-                    }
+                    return this.List[i].IsSameType(other.SubSequence(temp_j), parameters);
+                }
 
-                    // そうでない場合、一致する場所を探す
+                // 次がパラメーターの場合
+                if (this.List[i + 1].HasVariables())
+                {
+                    // 次のTeXコマンドのところを探す
                     for (int j = temp_j + 1; j < other.List.Count; j++)
                     {
-                        var dummy = new Dictionary<string, MathObject>();
-                        if (this.List[i + 1].IsSameType(other.List[j], dummy))
+                        if (other.List[j].Main.ToString().StartsWith(@"\"))
                         {
                             if (!this.List[i].IsSameType(other.SubSequence(temp_j, j - temp_j), parameters)) return false;
                             temp_j = j;
@@ -456,22 +434,65 @@ namespace CheckTikZDiagram
                         }
                     }
 
-                    // 一致する場所がなかった場合はfalse
-                    return false;
+                    // なければ次のMathObjectを使用する
+                    if (!this.List[i].IsSameType(other.List[temp_j], parameters)) return false;
+                    temp_j++;
+                    continue;
                 }
-                else
+
+                // そうでない場合、一致する場所を探す
+                for (int j = temp_j + 1; j < other.List.Count; j++)
                 {
-                    return this.List[i].IsSameType(other.SubSequence(temp_j), parameters);
+                    var dummy = new Dictionary<string, MathObject>();
+                    if (this.List[i + 1].IsSameType(other.List[j], dummy))
+                    {
+                        if (!this.List[i].IsSameType(other.SubSequence(temp_j, j - temp_j), parameters)) return false;
+                        temp_j = j;
+                        goto NEXT_LOOP;
+                    }
                 }
+
+                // 一致する場所がなかった場合はfalse
+                return false;
 
             NEXT_LOOP:;
             }
 
             return temp_j == other.List.Count;
+
+
+            static bool IsSameType_Script(MathObject? thisScript, MathObject? otherScript, IDictionary<string, MathObject> parameters)
+            {
+                if (thisScript == null)
+                {
+                    if (otherScript != null) return false;
+                }
+                else
+                {
+                    if (otherScript == null)
+                    {
+                        if (!thisScript.Main.EndsWith('?'))
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        if (!thisScript.IsSameType(otherScript, parameters)) return false;
+                    }
+                }
+
+                return true;
+            }
+
+            static bool RemovableBracket(Token left, Token right)
+            {
+                return (left.Equals(Token.LeftParenthesis) && right.Equals(Token.RightParenthesis))
+                    || (left.Equals(Token.LeftCurlyBracket) && right.Equals(Token.RightCurlyBracket));
+            }
         }
 
-
-        private bool IsSameType(MathToken other, IDictionary<string, MathObject> parameters)
+        private bool IsSameType_Token(MathToken other, IDictionary<string, MathObject> parameters)
         {
             // 上付き添え字についての判定
             if (this.Sup != null && !this.Sup.Main.EndsWith('?'))

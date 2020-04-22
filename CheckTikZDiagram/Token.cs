@@ -8,7 +8,7 @@ namespace CheckTikZDiagram
     /// <summary>
     /// TeXにおけるTokenを表す。
     /// </summary>
-    public class Token
+    public class Token : IEquatable<Token?>
     {
         /// <summary>
         /// 空Token
@@ -87,10 +87,26 @@ namespace CheckTikZDiagram
             }
             else
             {
-                return new TokenString(this);
+                return TokenString.Create(this);
             }
         }
 
         public override string ToString() => this.Value;
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as Token);
+        }
+
+        public bool Equals(Token? other)
+        {
+            return other != null &&
+                   Value == other.Value;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Value);
+        }
     }
 }

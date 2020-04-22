@@ -8,7 +8,7 @@ namespace CheckTikZDiagram
     /// <summary>
     /// 一つの射or対象を表すクラス
     /// </summary>
-    public abstract class MathObject : IEquatable<MathObject>
+    public abstract class MathObject : IEquatable<MathObject?>
     {
         /// <summary>
         /// 元となった文字列
@@ -51,23 +51,29 @@ namespace CheckTikZDiagram
         public abstract MathSequence SetScript(Token supOrSub, Token left, MathObject math, Token right);
 
         /// <summary>
-        /// 指定したMathObjectで二つに分割する
+        /// 指定したMathObjectで二つに分割する(全てのパターンを返す)(添え字がある場合は何も返さない)
         /// </summary>
         /// <param name="center">分割で使用するMathObject</param>
-        /// <returns></returns>
+        /// <returns>left: 左のMathObject  center: 指定したMathObject  right: 右のMathObject</returns>
         public abstract IEnumerable<(MathObject left, MathObject center, MathObject right)> Divide(MathObject center);
 
         /// <summary>
-        /// 含むパラメーターを全て返す(重複を含む)
+        /// 含む変数を全て返す(重複を含む)
         /// </summary>
         /// <returns></returns>
-        public abstract IEnumerable<string> GetParameters();
+        public abstract IEnumerable<string> GetVariables();
+
+        /// <summary>
+        /// 圏を表すMathObjectの場合true
+        /// </summary>
+        /// <returns></returns>
+        public abstract bool IsCategory();
 
         /// <summary>
         /// MathObjectが同じ「型」であるかを調べる
         /// </summary>
         /// <param name="other">#1, #2, …, #9を含まないMathObject</param>
-        /// <param name="parameters">t#1, #2, …, #9に対応するパラメーターを取得し格納する辞書</param>
+        /// <param name="parameters">#1, #2, …, #9に対応するパラメーターを取得し格納する辞書</param>
         /// <returns>同じ型ならtrue</returns>
         public abstract bool IsSameType(MathObject other, IDictionary<string, MathObject> parameters);
 
@@ -76,13 +82,17 @@ namespace CheckTikZDiagram
         /// (#i が含まれない場合は自分自身を返す。)
         /// </summary>
         /// <param name="parameters">代入するパラメーター</param>
-        /// <param name="setNull">省略可パラメーター(#!?, #2?, …, #9?)を許す場合true</param>
+        /// <param name="setNull">省略可変数(#!?, #2?, …, #9?)を許す場合true</param>
         /// <returns></returns>
         public abstract IEnumerable<MathObject> ApplyParameters(IReadOnlyDictionary<string, MathObject> parameters, bool setNull);
 
         public abstract TokenString ToTokenString();
 
-        public bool HasParameter() => this.ToString().Contains("#") || this.ToString().Contains("-");
+        /// <summary>
+        /// 変数を持つ場合true
+        /// </summary>
+        /// <returns></returns>
+        public bool HasVariables() => this.ToString().Contains("#") || this.ToString().Contains("-");
 
         public bool Contains(string value) => this.ToString().Contains(value);
         
@@ -133,7 +143,7 @@ namespace CheckTikZDiagram
         }
 
 
-        public bool Equals([AllowNull] MathObject other)
+        public bool Equals(MathObject? other)
         {
             if (other == null)
             {

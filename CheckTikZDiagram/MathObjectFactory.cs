@@ -33,7 +33,7 @@ namespace CheckTikZDiagram
             _source = text;
         }
 
-        private void Initialize()
+        private void Clear()
         {
             _sequence = new List<MathObject>();
             _original.Clear();
@@ -47,7 +47,11 @@ namespace CheckTikZDiagram
         public MathObject CreateSingle()
         {
             var xs = CreateMain().ToArray();
-            if (xs.Length == 1)
+            if (xs.Length == 0)
+            {
+                return new MathSequence(Array.Empty<MathObject>(), "", _source.ToOriginalString());
+            }
+            else if (xs.Length == 1)
             {
                 return xs[0];
             }
@@ -72,7 +76,7 @@ namespace CheckTikZDiagram
         /// <returns></returns>
         private IEnumerable<MathObject> CreateMain()
         {
-            Initialize();
+            Clear();
 
             for (int i = 0; i < _source.Tokens.Count; i++)
             {
@@ -95,7 +99,7 @@ namespace CheckTikZDiagram
                     {
                         yield return ReturnMathObject();
                     }
-                    Initialize();
+                    Clear();
                 }
             }
 
@@ -136,14 +140,9 @@ namespace CheckTikZDiagram
 
             if (_bracketCount == 0) // 全ての括弧が閉じられた場合
             {
-                if (_inBracket.Count <= 1)
-                {
-                    return;
-                }
-
                 // 括弧の中身でMathObjectを生成
                 var left = _inBracket.First();
-                var main = new TokenString(_inBracket.Skip(1).ToArray());
+                var main = _inBracket.Skip(1).ToArray().ToTokenString();
                 var mathObject = new MathObjectFactory(main).CreateSingle();
 
                 // 添え字でない場合は括弧をMathObjectに含める
@@ -187,6 +186,10 @@ namespace CheckTikZDiagram
             }
             else if (token.Value == "^" || token.Value == "_")
             {
+                if (_sequence.Count == 0)
+                {
+                    AddSequence(new MathObjectFactory("").CreateSingle(), Token.Empty, Token.Empty);
+                }
                 _scriptToken = token;
             }
             else

@@ -67,7 +67,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Functor_パラメーター_括弧あり()
+        public void Functor_括弧あり()
         {
             var list = new List<Functor>()
             {
@@ -117,7 +117,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Functor_パラメーター_括弧なし()
+        public void Functor_括弧なし()
         {
             var list = new List<Functor>()
             {

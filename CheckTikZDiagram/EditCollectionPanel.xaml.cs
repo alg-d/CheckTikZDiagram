@@ -84,30 +84,32 @@ namespace CheckTikZDiagram
 
         private void UpdateButton_Click(object sender, RoutedEventArgs e)
         {
-            if (ItemList[SelectedIndex] == Value)
+            var v = Value.Trim();
+            if (ItemList[SelectedIndex] == v)
             {
                 SelectedIndex = -1;
             }
-            else if (ItemList.Contains(Value))
+            else if (ItemList.Contains(v))
             {
-                MessageBox.Show(Value + "は既に登録されています");
+                MessageBox.Show(v + "は既に登録されています");
             }
             else
             {
-                ItemList[SelectedIndex] = Value;
+                ItemList[SelectedIndex] = v;
                 SelectedIndex = -1;
             }
         }
 
         private void AddButton_Click(object sender, RoutedEventArgs e)
         {
-            if (ItemList.Contains(Value))
+            var v = Value.Trim();
+            if (ItemList.Contains(v))
             {
-                MessageBox.Show(Value + "は既に登録されています");
+                MessageBox.Show(v + "は既に登録されています");
             }
             else
             {
-                ItemList.Add(Value);
+                ItemList.Add(v);
                 SelectedIndex = -1;
             }
         }

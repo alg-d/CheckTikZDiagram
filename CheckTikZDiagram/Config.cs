@@ -31,7 +31,9 @@ namespace CheckTikZDiagram
 
         public ObservableCollection<string> Compositions { get; set; } = new ObservableCollection<string>();
 
-        public ObservableCollection<string> Kans { get; set; } = new ObservableCollection<string>();
+        public ObservableCollection<string> KanExtensions { get; set; } = new ObservableCollection<string>();
+
+        public ObservableCollection<string> KanLifts { get; set; } = new ObservableCollection<string>();
 
         public string[] OpenBrackets { get; set; } = new[] { "(", "{", "[", "\\{", "\\langle" };
         public string[] CloseBrackets { get; set; } = new[] { ")", "}", "]", "\\}", "\\rangle" };
@@ -141,7 +143,9 @@ namespace CheckTikZDiagram
 
             c.Compositions.AddRange(new[] { "\\circ", "\\ocmp", "\\vcmp" });
 
-            c.Kans.AddRange(new[] { "\\Lan", "\\Ran", "\\Lift", "\\Rift" });
+            c.KanExtensions.AddRange(new[] { "\\Lan", "\\Ran" });
+
+            c.KanLifts.AddRange(new[] { "\\Lift", "\\Rift" });
 
             c.Morphisms.AddRange(new[]
             {

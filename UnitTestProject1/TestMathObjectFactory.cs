@@ -127,6 +127,73 @@ namespace UnitTestProject1
             math.OriginalText.Is(@"\cat { C }");
         }
 
+        [TestMethod]
+        public void 空()
+        {
+            var math = new MathObjectFactory("").CreateSingle();
+            math.OriginalText.Is("");
+            math.AsMathSequence().List.Count.Is(0);
+            math.Main.TestString("");
+            math.ToTokenString().TestString("");
+
+            math = new MathObjectFactory("{}").CreateSingle();
+            math.OriginalText.Is("{}");
+            math.AsMathSequence().List.Count.Is(0);
+            math.Main.TestString("");
+            math.AsMathSequence().LeftBracket.TestToken("{");
+            math.AsMathSequence().RightBracket.TestToken("}");
+            math.ToTokenString().TestString("{}");
+
+            math = new MathObjectFactory("{}^i").CreateSingle();
+            math.OriginalText.Is("{}^i");
+            math.AsMathSequence().List.Count.Is(0);
+            math.Main.TestString("");
+            math.AsMathSequence().LeftBracket.TestToken("{");
+            math.AsMathSequence().RightBracket.TestToken("}");
+            math.AsMathSequence().Sup.IsMathToken("i");
+            math.AsMathSequence().Sub.IsNull();
+            math.ToTokenString().TestString("{}^i");
+
+            math = new MathObjectFactory("{}_j").CreateSingle();
+            math.OriginalText.Is("{}_j");
+            math.AsMathSequence().List.Count.Is(0);
+            math.Main.TestString("");
+            math.AsMathSequence().LeftBracket.TestToken("{");
+            math.AsMathSequence().RightBracket.TestToken("}");
+            math.AsMathSequence().Sup.IsNull();
+            math.AsMathSequence().Sub.IsMathToken("j");
+            math.ToTokenString().TestString("{}_j");
+
+            math = new MathObjectFactory("{}^i_j").CreateSingle();
+            math.OriginalText.Is("{}^i_j");
+            math.AsMathSequence().List.Count.Is(0);
+            math.Main.TestString("");
+            math.AsMathSequence().LeftBracket.TestToken("{");
+            math.AsMathSequence().RightBracket.TestToken("}");
+            math.AsMathSequence().Sup.IsMathToken("i");
+            math.AsMathSequence().Sub.IsMathToken("j");
+            math.ToTokenString().TestString("{}^i_j");
+        }
+        [TestMethod]
+        public void Prime()
+        {
+            var math = CreateSingleSequence(@"a'");
+            math.List.Count.Is(1);
+            math.Sup.IsMathToken(@"\prime");
+            math.Sub.IsNull();
+            math.Main.TestString("a");
+            math.ToTokenString().TestString(@"a^{\prime}");
+
+            math = CreateSingleSequence(@"\alpha'_{ij}");
+            math.List.Count.Is(1);
+            math.Sup.IsMathToken(@"\prime");
+            math.Sub.AsMathSequence().List.Count.Is(2);
+            math.Sub.AsMathSequence().Sup.IsNull();
+            math.Sub.AsMathSequence().Sub.IsNull();
+            math.Sub.AsMathSequence().ToTokenString().TestString("ij");
+            math.Main.TestString(@"\alpha");
+            math.ToTokenString().TestString(@"\alpha^{\prime}_{ij}");
+        }
 
         [TestMethod]
         public void 複数生成()
@@ -246,88 +313,91 @@ namespace UnitTestProject1
         [TestMethod]
         public void 添え字()
         {
-            var math = CreateSingleSequence("p_j");
-            math.List.Count.Is(1);
-            math.List[0].IsMathToken("p");
-            math.Sup.IsNull();
-            math.Sub.IsMathToken("j");
-            math.Main.TestString("p");
-            math.ToTokenString().TestString("p_{j}");
+            var seq = CreateSingleSequence("p_j");
+            seq.List.Count.Is(1);
+            seq.List[0].IsMathToken("p");
+            seq.Sup.IsNull();
+            seq.Sub.IsMathToken("j");
+            seq.Main.TestString("p");
+            seq.ToTokenString().TestString("p_{j}");
 
-            math = CreateSingleSequence("F^*");
-            math.List.Count.Is(1);
-            math.List[0].IsMathToken("F");
-            math.Sup.IsMathToken("*");
-            math.Sub.IsNull();
-            math.Main.TestString("F");
-            math.ToTokenString().TestString("F^*");
+            seq = CreateSingleSequence("F^*");
+            seq.List.Count.Is(1);
+            seq.List[0].IsMathToken("F");
+            seq.Sup.IsMathToken("*");
+            seq.Sub.IsNull();
+            seq.Main.TestString("F");
+            seq.ToTokenString().TestString("F^*");
 
-            math = CreateSingleSequence(@"\theta_ i");
-            math.List.Count.Is(1);
-            math.Sup.IsNull();
-            math.Sub.IsMathToken("i");
-            math.Main.TestString(@"\theta");
-            math.ToTokenString().TestString(@"\theta_{i}");
+            seq = CreateSingleSequence(@"\theta_ i");
+            seq.List.Count.Is(1);
+            seq.Sup.IsNull();
+            seq.Sub.IsMathToken("i");
+            seq.Main.TestString(@"\theta");
+            seq.ToTokenString().TestString(@"\theta_{i}");
 
-            math = CreateSingleSequence(@"\theta_{abc}");
-            math.List.Count.Is(1);
-            math.Sup.IsNull();
-            math.Sub.AsMathSequence().List.Count.Is(3);
-            math.Sub.Main.TestString("abc");
-            math.Sub.AsMathSequence().LeftBracket.TestToken("");
-            math.Sub.AsMathSequence().RightBracket.TestToken("");
-            math.Main.TestString(@"\theta");
-            math.ToTokenString().TestString(@"\theta_{abc}");
+            seq = CreateSingleSequence(@"\theta_{abc}{de}");
+            seq.List.Count.Is(2);
+            var x = seq.List[0].AsMathSequence();
+            x.Sup.IsNull();
+            x.Sub.AsMathSequence().List.Count.Is(3);
+            x.Sub.Main.TestString("abc");
+            x.Sub.AsMathSequence().LeftBracket.TestToken("");
+            x.Sub.AsMathSequence().RightBracket.TestToken("");
+            x.Main.TestString(@"\theta");
+            x.ToTokenString().TestString(@"\theta_{abc}");
+            seq.List[1].ToTokenString().TestString("{de}");
+            seq.ToTokenString().TestString(@"\theta_{abc}{de}");
 
-            math = CreateSingleSequence(@"\theta _abc");
-            math.List.Count.Is(3);
-            math.List[0].Main.TestString(@"\theta");
-            math.List[0].AsMathSequence().Sup.IsNull();
-            math.List[0].AsMathSequence().Sub.IsMathToken("a");
-            math.List[1].IsMathToken("b");
-            math.List[2].IsMathToken("c");
-            math.Main.TestString(@"\theta_{a}bc");
-            math.ToTokenString().TestString(@"\theta_{a}bc");
+            seq = CreateSingleSequence(@"\theta _abc");
+            seq.List.Count.Is(3);
+            seq.List[0].Main.TestString(@"\theta");
+            seq.List[0].AsMathSequence().Sup.IsNull();
+            seq.List[0].AsMathSequence().Sub.IsMathToken("a");
+            seq.List[1].IsMathToken("b");
+            seq.List[2].IsMathToken("c");
+            seq.Main.TestString(@"\theta_{a}bc");
+            seq.ToTokenString().TestString(@"\theta_{a}bc");
 
-            math = CreateSingleSequence(@"G\theta _\index");
-            math.List.Count.Is(2);
-            math.List[0].IsMathToken("G");
-            math.List[1].Main.TestString(@"\theta");
-            math.List[1].AsMathSequence().Sub.IsMathToken(@"\index");
-            math.Main.TestString(@"G\theta_{\index}");
-            math.ToTokenString().TestString(@"G\theta_{\index}");
+            seq = CreateSingleSequence(@"G\theta _\index");
+            seq.List.Count.Is(2);
+            seq.List[0].IsMathToken("G");
+            seq.List[1].Main.TestString(@"\theta");
+            seq.List[1].AsMathSequence().Sub.IsMathToken(@"\index");
+            seq.Main.TestString(@"G\theta_{\index}");
+            seq.ToTokenString().TestString(@"G\theta_{\index}");
 
-            math = CreateSingleSequence(@"G\theta_{ \index }");
-            math.List.Count.Is(2);
-            math.List[0].IsMathToken("G");
-            math.List[1].Main.TestString(@"\theta");
-            math.List[1].AsMathSequence().Sub.IsMathToken(@"\index");
-            math.Main.TestString(@"G\theta_{\index}");
-            math.ToTokenString().TestString(@"G\theta_{\index}");
+            seq = CreateSingleSequence(@"G\theta_{ \index }");
+            seq.List.Count.Is(2);
+            seq.List[0].IsMathToken("G");
+            seq.List[1].Main.TestString(@"\theta");
+            seq.List[1].AsMathSequence().Sub.IsMathToken(@"\index");
+            seq.Main.TestString(@"G\theta_{\index}");
+            seq.ToTokenString().TestString(@"G\theta_{\index}");
 
-            math = CreateSingleSequence(@"{f}{p _i}{\alpha^k}");
-            math.List.Count.Is(3);
-            math.List[0].AsMathSequence().List.Count.Is(1);
-            math.List[0].AsMathSequence().List[0].IsMathToken("f");
-            math.List[0].ToTokenString().TestString("{f}");
-            math.List[1].AsMathSequence().List.Count.Is(1);
-            math.List[1].AsMathSequence().List[0].AsMathSequence().List.Count.Is(1);
-            math.List[1].AsMathSequence().List[0].AsMathSequence().List[0].IsMathToken("p");
-            math.List[1].AsMathSequence().List[0].AsMathSequence().Sup.IsNull();
-            math.List[1].AsMathSequence().List[0].AsMathSequence().Sub.IsMathToken("i");
-            math.List[1].Main.TestString("p_i");
-            math.List[1].AsMathSequence().Sup.IsNull();
-            math.List[1].AsMathSequence().Sub.IsNull();
-            math.List[2].AsMathSequence().List.Count.Is(1);
-            math.List[2].AsMathSequence().List[0].AsMathSequence().List.Count.Is(1);
-            math.List[2].AsMathSequence().List[0].AsMathSequence().List[0].IsMathToken(@"\alpha");
-            math.List[2].AsMathSequence().List[0].AsMathSequence().Sup.IsMathToken("k");
-            math.List[2].AsMathSequence().List[0].AsMathSequence().Sub.IsNull();
-            math.List[2].Main.TestString(@"\alpha^{k}");
-            math.List[2].AsMathSequence().Sup.IsNull();
-            math.List[2].AsMathSequence().Sub.IsNull();
-            math.Main.TestString(@"{f}{p_{i}}{\alpha^{k}}");
-            math.ToTokenString().TestString(@"{f}{p_{i}}{\alpha^{k}}");
+            seq = CreateSingleSequence(@"{f}{p _i}{\alpha^k}");
+            seq.List.Count.Is(3);
+            seq.List[0].AsMathSequence().List.Count.Is(1);
+            seq.List[0].AsMathSequence().List[0].IsMathToken("f");
+            seq.List[0].ToTokenString().TestString("{f}");
+            seq.List[1].AsMathSequence().List.Count.Is(1);
+            seq.List[1].AsMathSequence().List[0].AsMathSequence().List.Count.Is(1);
+            seq.List[1].AsMathSequence().List[0].AsMathSequence().List[0].IsMathToken("p");
+            seq.List[1].AsMathSequence().List[0].AsMathSequence().Sup.IsNull();
+            seq.List[1].AsMathSequence().List[0].AsMathSequence().Sub.IsMathToken("i");
+            seq.List[1].Main.TestString("p_i");
+            seq.List[1].AsMathSequence().Sup.IsNull();
+            seq.List[1].AsMathSequence().Sub.IsNull();
+            seq.List[2].AsMathSequence().List.Count.Is(1);
+            seq.List[2].AsMathSequence().List[0].AsMathSequence().List.Count.Is(1);
+            seq.List[2].AsMathSequence().List[0].AsMathSequence().List[0].IsMathToken(@"\alpha");
+            seq.List[2].AsMathSequence().List[0].AsMathSequence().Sup.IsMathToken("k");
+            seq.List[2].AsMathSequence().List[0].AsMathSequence().Sub.IsNull();
+            seq.List[2].Main.TestString(@"\alpha^{k}");
+            seq.List[2].AsMathSequence().Sup.IsNull();
+            seq.List[2].AsMathSequence().Sub.IsNull();
+            seq.Main.TestString(@"{f}{p_{i}}{\alpha^{k}}");
+            seq.ToTokenString().TestString(@"{f}{p_{i}}{\alpha^{k}}");
         }
 
         [TestMethod]
@@ -424,6 +494,31 @@ namespace UnitTestProject1
             math.RightBracket.TestToken(")");
             math.Main.TestString(@"(\phi_{gf})^{\sigma}");
             math.ToTokenString().TestString(@"((\phi_{gf})^{\sigma})_d");
+        }
+
+        [TestMethod]
+        public void 添え字で開始()
+        {
+            var math = CreateSingleSequence("^i");
+            math.List.Count.Is(0);
+            math.Main.TestString("");
+            math.Sup.IsMathToken("i");
+            math.Sub.IsNull();
+            math.ToTokenString().TestString("^i");
+
+            math = CreateSingleSequence(@"_ \test");
+            math.List.Count.Is(0);
+            math.Main.TestString("");
+            math.Sup.IsNull();
+            math.Sub.IsMathToken(@"\test");
+            math.ToTokenString().TestString(@"_\test");
+
+            math = CreateSingleSequence("^ { a b c }_j");
+            math.List.Count.Is(0);
+            math.Main.TestString("");
+            math.Sup.ToTokenString().TestString("abc");
+            math.Sub.IsMathToken("j");
+            math.ToTokenString().TestString("^{abc}_j");
         }
 
         [TestMethod]
@@ -539,7 +634,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーター1()
+        public void 変数1()
         {
             var token = new MathObjectFactory("#1").Create().TestSingle();
             token.IsMathToken("#1");
@@ -590,7 +685,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void パラメーター2()
+        public void 変数2()
         {
             var math = CreateSingleSequence(@"\test{#1}");
             math.List.Count.Is(2);

@@ -61,7 +61,7 @@ namespace CheckTikZDiagram
             Target = target;
 
             if ((type == MorphismType.Functor || type == MorphismType.OneMorphism)
-                && (IsCategory(source) || IsCategory(target)))
+                && (source.IsCategory() || target.IsCategory()))
             {
                 if (source.Contains(@"\times"))
                 {
@@ -140,18 +140,18 @@ namespace CheckTikZDiagram
         /// <returns></returns>
         public static IEnumerable<Morphism> Create(string text, int defLine = -1)
         {
-            foreach (var (math, source, target, arrow) in CreateHelperNormal(text))
+            foreach (var (math, source, target, arrow) in CreateMainNormal(text))
             {
                 yield return new Morphism(math, source, target, GetMorphismType(arrow), defLine);
             }
 
-            foreach (var (math, source, target) in CreateHelperHom(text))
+            foreach (var (math, source, target) in CreateMainHom(text))
             {
                 yield return new Morphism(math, source, target, MorphismType.OneMorphism, defLine);
             }
         }
 
-        private static IEnumerable<(MathObject, MathObject, MathObject, string)> CreateHelperNormal(string text)
+        private static IEnumerable<(MathObject, MathObject, MathObject, string)> CreateMainNormal(string text)
         {
             var d = _doubleColon.Match(text);
             if (d.Success)
@@ -171,8 +171,8 @@ namespace CheckTikZDiagram
                 if (d.Success)
                 {
                     // \colon が複数ある場合の処理
-                    foreach (var item in Morphism.CreateHelperNormal(source + d.Groups[3].Value)) yield return item;
-                    foreach (var item in Morphism.CreateHelperNormal(target + d.Groups[3].Value)) yield return item;
+                    foreach (var item in Morphism.CreateMainNormal(source + d.Groups[3].Value)) yield return item;
+                    foreach (var item in Morphism.CreateMainNormal(target + d.Groups[3].Value)) yield return item;
                 }
 
                 var sourceMath = new MathObjectFactory(source).CreateSingle();
@@ -197,7 +197,7 @@ namespace CheckTikZDiagram
         }
 
 
-        private static IEnumerable<(MathObject, MathObject, MathObject)> CreateHelperHom(string text)
+        private static IEnumerable<(MathObject, MathObject, MathObject)> CreateMainHom(string text)
         {
             var h = _homSet.Match(text);
             if (!h.Success)
@@ -228,16 +228,11 @@ namespace CheckTikZDiagram
             }
         }
 
-        private bool IsCategory(MathObject math)
-        {
-            return Config.Instance.Categories.Any(x => math.Contains(x));
-        }
-
         private bool IsContravariant(MathObject source, MathObject target)
         {
-            var opp = Config.Instance.Opposite;
-            return ( source.Contains(opp) && !target.Contains(opp))
-                || (!source.Contains(opp) &&  target.Contains(opp));
+            var opp = new Token(Config.Instance.Opposite, "");
+            return ( source.Main.Tokens[0].Equals(opp) && !target.Main.Tokens[0].Equals(opp))
+                || (!source.Main.Tokens[0].Equals(opp) &&  target.Main.Tokens[0].Equals(opp));
         }
 
         public IEnumerable<Morphism> ApplyParameter(MathObject math, IReadOnlyDictionary<string, MathObject> parameters, bool setNull)

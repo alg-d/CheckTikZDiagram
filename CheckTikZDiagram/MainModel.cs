@@ -37,7 +37,7 @@ namespace CheckTikZDiagram
         /// <summary>
         /// メイン処理
         /// </summary>
-        /// <param name="text">読み込むtexファイルの中身</param>
+        /// <param name="text">読み込むtexファイルの中身全体の文字列</param>
         /// <param name="progressNumber">何行ごとにProgressBarを進めるか</param>
         public void MainLoop(string text, int progressNumber)
         {
@@ -54,7 +54,10 @@ namespace CheckTikZDiagram
             _tikzFlag = false;
             _texCommandFlag = false;
             _line = 1;
-            
+
+            // 「\\」は削除
+            text = text.Replace(@"\\", " ");
+
             foreach (var x in text)
             {
                 if (x == '\n')
@@ -102,10 +105,10 @@ namespace CheckTikZDiagram
             if (x == '\n')
             {
                 _commentFlag = false;
-                _text.Append(x);
+                _text.Append(' ');
                 return;
             }
-            else if (x == 'm' && _comment.ToString() == "CheckTikZDiagra")
+            else if (x == 'm' && _comment.ToString().EndsWith("CheckTikZDiagra"))
             {
                 if (_tikzFlag)
                 {
@@ -137,7 +140,7 @@ namespace CheckTikZDiagram
             if (_tikzFlag) throw new InvalidOperationException("_tikzFlag == false でないのにMathModeに来るのはおかしい");
             if (_texCommandFlag) throw new InvalidOperationException("_texCommandFlag == false でないのにMathModeに来るのはおかしい");
 
-            if (x == '$')
+            if (x == '$' && !_text.ToString().EndsWith(@"\", StringComparison.Ordinal))
             {
                 _mathFlag = false;
                 ReadMathText(_text.ToString());
@@ -156,7 +159,7 @@ namespace CheckTikZDiagram
         /// <summary>
         /// 数式($で囲まれた部分)を解釈して_definedMorphismDictionaryに格納する
         /// </summary>
-        /// <param name="text"></param>
+        /// <param name="text">数式($は含まない)</param>
         private void ReadMathText(string text)
         {
             foreach (var mor in Morphism.Create(text, _line))
