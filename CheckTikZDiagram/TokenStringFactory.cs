@@ -40,6 +40,10 @@ namespace CheckTikZDiagram
 
             if (_texCommandFlag || _texParameterFlag)
             {
+                if (_temp.ToString() == "#")
+                {
+                    throw new InvalidOperationException("# で終わることはできません。");
+                }
                 AddToken(_temp.ToString(), _supOrSubFlag);
             }
 
@@ -107,10 +111,17 @@ namespace CheckTikZDiagram
 
             if (_temp.Length == 1)
             {
-                _temp.Append(x);
-                _origin.Append(x);
+                if (x >= '0' && x <= '9')
+                {
+                    _temp.Append(x);
+                    _origin.Append(x);
+                }
+                else
+                {
+                    throw new InvalidOperationException("# の直後は数字でなければなりません。");
+                }
             }
-            else if (x == '?' || x == 's' || x == 't')
+            else if (x.AllowedCharacter())
             {
                 _temp.Append(x);
                 _origin.Append(x);

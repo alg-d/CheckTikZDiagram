@@ -416,49 +416,49 @@ namespace UnitTestProject1
         [TestMethod]
         public void IsSameType1MathSequence()
         {
-            var def = new MathObjectFactory(@"ab#1").Create().TestSingle();
+            var def = new MathObjectFactory(@"xy#1").Create().TestSingle();
 
             var parameters = new Dictionary<string, MathObject>();
-            var math = new MathObjectFactory(@"abc").Create().TestSingle();
+            var math = new MathObjectFactory(@"xyz").Create().TestSingle();
             def.IsSameType(math, parameters).IsTrue();
             parameters.Count.Is(1);
-            parameters["#1"].ToTokenString().TestString("c");
+            parameters["#1"].ToTokenString().TestString("z");
 
             parameters = new Dictionary<string, MathObject>();
-            math = new MathObjectFactory(@"abccc").Create().TestSingle();
+            math = new MathObjectFactory(@"xyzzz").Create().TestSingle();
             def.IsSameType(math, parameters).IsTrue();
             parameters.Count.Is(1);
-            parameters["#1"].ToTokenString().TestString("ccc");
+            parameters["#1"].ToTokenString().TestString("zzz");
 
 
-            def = new MathObjectFactory(@"a#1c").Create().TestSingle();
+            def = new MathObjectFactory(@"x#1z").Create().TestSingle();
 
             parameters = new Dictionary<string, MathObject>();
-            math = new MathObjectFactory(@"abc").Create().TestSingle();
+            math = new MathObjectFactory(@"xyz").Create().TestSingle();
             def.IsSameType(math, parameters).IsTrue();
             parameters.Count.Is(1);
-            parameters["#1"].ToTokenString().TestString("b");
+            parameters["#1"].ToTokenString().TestString("y");
 
             parameters = new Dictionary<string, MathObject>();
-            math = new MathObjectFactory(@"abbbc").Create().TestSingle();
+            math = new MathObjectFactory(@"xyyyz").Create().TestSingle();
             def.IsSameType(math, parameters).IsTrue();
             parameters.Count.Is(1);
-            parameters["#1"].ToTokenString().TestString("bbb");
+            parameters["#1"].ToTokenString().TestString("yyy");
 
 
-            def = new MathObjectFactory(@"#1bc").Create().TestSingle();
+            def = new MathObjectFactory(@"#1yz").Create().TestSingle();
 
             parameters = new Dictionary<string, MathObject>();
-            math = new MathObjectFactory(@"abc").Create().TestSingle();
+            math = new MathObjectFactory(@"xyz").Create().TestSingle();
             def.IsSameType(math, parameters).IsTrue();
             parameters.Count.Is(1);
-            parameters["#1"].ToTokenString().TestString("a");
+            parameters["#1"].ToTokenString().TestString("x");
 
             parameters = new Dictionary<string, MathObject>();
-            math = new MathObjectFactory(@"aaabc").Create().TestSingle();
+            math = new MathObjectFactory(@"xxxyz").Create().TestSingle();
             def.IsSameType(math, parameters).IsTrue();
             parameters.Count.Is(1);
-            parameters["#1"].ToTokenString().TestString("aaa");
+            parameters["#1"].ToTokenString().TestString("xxx");
         }
 
         [TestMethod]

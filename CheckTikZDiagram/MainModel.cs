@@ -24,6 +24,7 @@ namespace CheckTikZDiagram
         private bool _tikzFlag;
         private bool _texCommandFlag;
         private bool _definitionFlag;
+        private bool _omitFlag;
         private int _line;
 
         public event Action<CheckResult>? OutputEvent;
@@ -53,6 +54,7 @@ namespace CheckTikZDiagram
             _mathFlag = false;
             _tikzFlag = false;
             _texCommandFlag = false;
+            _omitFlag = false;
             _line = 1;
 
             // 「\\」は削除
@@ -99,6 +101,7 @@ namespace CheckTikZDiagram
             // _tikzFlag == true or false
             // _texCommandFlag == false
             // _definitionFlag == true or false
+            // _omitFlag == true or false
             if (!_commentFlag) throw new InvalidOperationException("_commentFlag == true でないのにCommentModeに来るのはおかしい");
             if (_texCommandFlag) throw new InvalidOperationException("_texCommandFlag == false でないのにCommentModeに来るのはおかしい");
 
@@ -108,13 +111,27 @@ namespace CheckTikZDiagram
                 _text.Append(' ');
                 return;
             }
-            else if (x == 'm' && _comment.ToString().EndsWith("CheckTikZDiagra"))
+
+            if (_tikzFlag)
             {
-                if (_tikzFlag)
+                if (x == 'n' && _comment.ToString().EndsWith("CheckTikZDiagramDefinitio"))
                 {
                     _definitionFlag = true;
                 }
-                else
+                else if (x == 'e' && _comment.ToString().EndsWith("CheckTikZDiagramIgnor"))
+                {
+                    _text.Append(_comment);
+                    _text.Append(x);
+                    _text.Append('\n');
+                }
+                else if (x == 't' && _comment.ToString().EndsWith("CheckTikZDiagramOmi"))
+                {
+                    _omitFlag = true;
+                }
+            }
+            else
+            {
+                if (x == 'm' && _comment.ToString().EndsWith("CheckTikZDiagra"))
                 {
                     _commentFlag = false;
                     return;
@@ -135,15 +152,24 @@ namespace CheckTikZDiagram
             // _tikzFlag == false
             // _texCommandFlag == false
             // _definitionFlag == true or false
+            // _omitFlag == false
             if (_commentFlag) throw new InvalidOperationException("_commentFlag == false でないのにMathModeに来るのはおかしい");
             if (!_mathFlag) throw new InvalidOperationException("_mathFlag == true でないのにMathModeに来るのはおかしい");
             if (_tikzFlag) throw new InvalidOperationException("_tikzFlag == false でないのにMathModeに来るのはおかしい");
             if (_texCommandFlag) throw new InvalidOperationException("_texCommandFlag == false でないのにMathModeに来るのはおかしい");
+            if (_omitFlag) throw new InvalidOperationException("_omitFlag == false でないのにMathModeに来るのはおかしい");
 
             if (x == '$' && !_text.ToString().EndsWith(@"\", StringComparison.Ordinal))
             {
                 _mathFlag = false;
-                ReadMathText(_text.ToString());
+                try
+                {
+                    ReadMathText(_text.ToString());
+                }
+                catch (InvalidOperationException ex)
+                {
+                    OutputResult(new CheckResult(_line, $"数式 {_text} が不正です。{ex.Message}", true, true));
+                }
                 return;
             }
             else if (x == '%')
@@ -193,14 +219,12 @@ namespace CheckTikZDiagram
                 return false;
             }
 
-            if (_definedMorphismDictionary.TryGetValue(mor.Source.ToTokenString(), out var source) 
-                && (source.Type == MorphismType.Functor || source.Type == MorphismType.ContravariantFunctor || source.Type == MorphismType.Bifunctor))
+            if (_definedMorphismDictionary.TryGetValue(mor.Source.ToTokenString(), out var source) && source.IsFunctor)
             {
                 return true;
             }
 
-            if (_definedMorphismDictionary.TryGetValue(mor.Target.ToTokenString(), out var target)
-                && (target.Type == MorphismType.Functor || target.Type == MorphismType.ContravariantFunctor || target.Type == MorphismType.Bifunctor))
+            if (_definedMorphismDictionary.TryGetValue(mor.Target.ToTokenString(), out var target) && target.IsFunctor)
             {
                 return true;
             }
@@ -209,7 +233,7 @@ namespace CheckTikZDiagram
         }
 
         /// <summary>
-        /// TikZPicture環境を読むための処理
+        /// tikzpicture環境を読むための処理
         /// </summary>
         /// <param name="x"></param>
         private void TikZMode(char x)
@@ -219,6 +243,7 @@ namespace CheckTikZDiagram
             // tikzFlag == true
             // texCommandFlag == false
             // definitionFlag == true or false
+            // _omitFlag == true or false
             if (_commentFlag) throw new InvalidOperationException("_commentFlag == false でないのにTikZModeに来るのはおかしい");
             if (_mathFlag) throw new InvalidOperationException("_mathFlag == false でないのにTikZModeに来るのはおかしい");
             if (!_tikzFlag) throw new InvalidOperationException("_tikzFlag == true でないのにTikZModeに来るのはおかしい");
@@ -228,13 +253,21 @@ namespace CheckTikZDiagram
             {
                 if (_text.ToString().EndsWith(@"\end{tikzpicture", StringComparison.Ordinal))
                 {
-                    new TikZDiagram(_text.ToString(), _line, _definitionFlag, ErrorOnly,
-                        _definedMorphismDictionary, _parameterizedMorphisms, _functors)
-                        .CheckDiagram()
-                        .ForEach(x => OutputResult(x));
+                    try
+                    {
+                        new TikZDiagram(_text.ToString(), _line, _definitionFlag, _omitFlag, ErrorOnly,
+                           _definedMorphismDictionary, _parameterizedMorphisms, _functors)
+                           .CheckDiagram()
+                           .ForEach(x => OutputResult(x));
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        OutputResult(new CheckResult(_line, $"tikzpicture環境 {_text} が不正です。{ex.Message}", true, true));
+                    }
                     
                     _tikzFlag = false;
                     _definitionFlag = false;
+                    _omitFlag = false;
                     return;
                 }
             }
@@ -255,11 +288,13 @@ namespace CheckTikZDiagram
             // _tikzFlag == false
             // _texCommandFlag == true
             // _definitionFlag == false
+            // _omitFlag == false
             if (_commentFlag) throw new InvalidOperationException("_commentFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (_mathFlag) throw new InvalidOperationException("_mathFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (_tikzFlag) throw new InvalidOperationException("_tikzFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (!_texCommandFlag) throw new InvalidOperationException("_texCommandFlag == true でないのにTexCommandModeに来るのはおかしい");
             if (_definitionFlag) throw new InvalidOperationException("_definitionFlag == false でないのにTexCommandModeに来るのはおかしい");
+            if (_omitFlag) throw new InvalidOperationException("_omitFlag == false でないのにTexCommandModeに来るのはおかしい");
 
             // 制御綴 1文字目
             if (_texCommand.Length == 1)
@@ -337,11 +372,13 @@ namespace CheckTikZDiagram
             // tikzFlag == false
             // texCommandFlag == false
             // definitionFlag == false
+            // _omitFlag == false
             if (_commentFlag) throw new InvalidOperationException("_commentFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (_mathFlag) throw new InvalidOperationException("_mathFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (_tikzFlag) throw new InvalidOperationException("_tikzFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (_texCommandFlag) throw new InvalidOperationException("_texCommandFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (_definitionFlag) throw new InvalidOperationException("_definitionFlag == false でないのにTexCommandModeに来るのはおかしい");
+            if (_omitFlag) throw new InvalidOperationException("_omitFlag == false でないのにTexCommandModeに来るのはおかしい");
 
             if (x == '$')
             {

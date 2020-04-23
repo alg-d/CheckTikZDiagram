@@ -35,23 +35,33 @@ namespace CheckTikZDiagram
             return new MathSequence(this, supOrSub, left, math, right);
         }
 
-        public override IEnumerable<string> GetVariables()
+        private bool IsVariable()
         {
             var x = this.ToString();
             if (x == "-")
             {
-                yield return x;
+                return true;
             }
             else if (x.StartsWith("#"))
             {
                 if (x.Length == 2)
                 {
-                    yield return x;
+                    return true;
                 }
-                else if (x.Length == 3 && (x[2] == '?' || x[2] == 's' || x[2] == 't'))
+                else if (x.Length == 3 && x[2].AllowedCharacter())
                 {
-                    yield return x;
+                    return true;
                 }
+            }
+
+            return false;
+        }
+
+        public override IEnumerable<string> GetVariables()
+        {
+            if (this.IsVariable())
+            {
+                yield return this.ToString();
             }
         }
 
@@ -60,13 +70,17 @@ namespace CheckTikZDiagram
         public override bool IsSameType(MathObject other, IDictionary<string, MathObject> parameters)
         {
             var x = this.ToString();
-            if (x.StartsWith('#') && (x.Length == 2 || (x.Length == 3 && x[2] == '?')))
+
+            if (this.IsVariable())
             {
-                return IsSameTypeMain(other, parameters, x.Substring(0, 2));
-            }
-            else if (x == "-" || (x.StartsWith('#') && x.Length == 3 && (x[2] == 's' || x[2] == 't')))
-            {
-                return IsSameTypeMain(other, parameters, x);
+                if (x.Length == 3 && x[2] == '?')
+                {
+                    return IsSameTypeMain(other, parameters, x.Substring(0, 2));
+                }
+                else
+                {
+                    return IsSameTypeMain(other, parameters, x);
+                }
             }
             else
             {
@@ -111,7 +125,7 @@ namespace CheckTikZDiagram
         public override IEnumerable<MathObject> ApplyParameters(IReadOnlyDictionary<string, MathObject> parameters, bool setNull)
         {
             var key = this.ToString();
-            if (key == "-" || key.StartsWith('#'))
+            if (this.IsVariable())
             {
                 if (key.Length > 2 && key[2] == '?')
                 {

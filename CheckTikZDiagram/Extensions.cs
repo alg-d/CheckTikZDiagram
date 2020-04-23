@@ -21,6 +21,16 @@ namespace CheckTikZDiagram
         }
 
 
+        public static bool AllowedCharacter(this char value)
+        {
+            return value == '?'
+                || value == 'a'
+                || value == 'b'
+                || value == 's'
+                || value == 't';
+        }
+
+
         public static bool IsNullOrEmpty(this string? text)
         {
             return string.IsNullOrEmpty(text);

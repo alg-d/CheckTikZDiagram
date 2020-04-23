@@ -142,7 +142,28 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Createパラメーター()
+        public void Create変数()
+        {
+            var mor = Morphism.Create(@"\theta^{#1}\colon F(#1)\rightarrow G#1").TestSingle();
+            mor.Name.AsMathSequence().List.Count.Is(1);
+            mor.Name.AsMathSequence().List[0].IsMathToken(@"\theta");
+            mor.Name.AsMathSequence().Sup.IsMathToken("#1");
+            mor.Source.AsMathSequence().List.Count.Is(2);
+            mor.Source.AsMathSequence().List[0].IsMathToken("F");
+            mor.Source.AsMathSequence().List[1].AsMathSequence().List.Count.Is(1);
+            mor.Source.AsMathSequence().List[1].AsMathSequence().List[0].IsMathToken("#1");
+            mor.Source.AsMathSequence().List[1].AsMathSequence().LeftBracket.TestToken("(");
+            mor.Source.AsMathSequence().List[1].AsMathSequence().RightBracket.TestToken(")");
+            mor.Target.AsMathSequence().List.Count.Is(2);
+            mor.Target.AsMathSequence().List[0].IsMathToken("G");
+            mor.Target.AsMathSequence().List[1].IsMathToken("#1");
+
+            var xs = Morphism.Create(@"\test{#1}{#2s}\colon F#1\rightarrow G#1").ToArray();
+            xs.Length.Is(0);
+        }
+
+        [TestMethod]
+        public void ApplyParameter_通常()
         {
             var mor = Morphism.Create(@"\theta^{#1}\colon F(#1)\rightarrow G#1").TestSingle();
             mor.Name.AsMathSequence().List.Count.Is(1);
@@ -194,7 +215,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Create_米田()
+        public void ApplyParameter_米田()
         {
             var mor = Morphism.Create(@"\yoneda_{#1?}\colon #1\rightarrow \widehat{#1}").TestSingle();
             mor.Name.AsMathSequence().List.Count.Is(1);

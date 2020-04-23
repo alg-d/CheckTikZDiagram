@@ -61,6 +61,7 @@ namespace UnitTestProject1
         {
             TikZArrow.Create(@"\draw[->] (a) to (b)").Count().Is(0);
             TikZArrow.Create(@"\draw[->] (a) -- (b)").Count().Is(0);
+            TikZArrow.Create(@"\draw[->] (a) to node {$\scriptstyle $} (b)").Count().Is(0);
             TikZArrow.Create(@"\draw[|->] (s) to node {$\scriptstyle f$} (t)").Count().Is(0);
         }
     }

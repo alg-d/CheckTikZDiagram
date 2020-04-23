@@ -14,6 +14,8 @@ namespace CheckTikZDiagram
     /// (2)改行は削除する
     /// (3)空白系は無視される
     /// (4) ' は ^ { \prime } とみなす
+    /// (5) # の直後は数字でなければならない
+    /// (5) # で終わることはできない
     /// </summary>
     public class TokenString : IEquatable<TokenString?>
     {

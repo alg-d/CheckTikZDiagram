@@ -85,6 +85,26 @@ test
         }
 
         [TestMethod]
+        public void ドル二つ()
+        {
+            TestMain(@"\documentclass[uplatex,a4j,12pt,dvipdfmx]{jsarticle}
+\author{algd}
+\title{ああああああああああああああああああ}
+\begin{document}
+test
+本文あああああ$y=f(x, \$)+4$ああああああああ
+$$h\colon a\rightarrow x$$
+ああああ$g\colon a\rightarrow x$あああ　ああああ．
+\[\begin{tikzpicture}[auto]
+\node (a) at (0, 1.2) {$a$}; \node (x) at (1.2, 1.2) {$x$};
+\draw[->] (a) to node {$\scriptstyle h$} (x);
+\draw[->] (a) to node {$\scriptstyle g$} (x);
+\end{tikzpicture}\]
+test
+\end{document}", 1);
+        }
+
+        [TestMethod]
         public void 数式改行()
         {
             TestMain(@"\documentclass[uplatex,a4j,12pt,dvipdfmx]{jsarticle}
@@ -150,7 +170,11 @@ test test $f\colon a\rightarrow x$ test
 %\draw[->] (a) to node {$\scriptstyle j$} (x);
 %\draw[->] (a) to node {$\scriptstyle k$} (x);
 %\end{tikzpicture}\]
-test
+test $p\colon u\rightarrow v$
+\[\begin{tikzpicture}[auto]
+\node (a) at (0, 1.2) {$u$}; \node (x) at (1.2, 1.2) {$v$};
+\draw[->] (a) to node {$\scriptstyle p$} (x);
+\end{tikzpicture}\]
 \end{document}", 1);
         }
 
@@ -171,13 +195,19 @@ test test $f\colon a\rightarrow x$ test
 \draw[->] (a) to node {$\scriptstyle f$} (x);
 \draw[->] (a) to node {$\scriptstyle g$} (x);
 \draw[->] (a) to node {$\scriptstyle h$} (x);
+%\draw[->] (a) to node {$\scriptstyle i$} (x);
+\draw[->] (a) to node {$\scriptstyle f$} (x);
 \end{tikzpicture}\]
-test
+test $p\colon u\rightarrow v$
+\[\begin{tikzpicture}[auto]
+\node (a) at (0, 1.2) {$u$}; \node (x) at (1.2, 1.2) {$v$};
+\draw[->] (a) to node {$\scriptstyle p$} (x);
+\end{tikzpicture}\]
 \end{document}", 0);
         }
 
         [TestMethod]
-        public void CheckTikZDiagram_TikZ()
+        public void CheckTikZDiagramDefinition()
         {
             TestMain(@"\documentclass[uplatex,a4j,12pt,dvipdfmx]{jsarticle}
 \author{algd}
@@ -188,7 +218,7 @@ test
 ああ$\test  abcde $ああああ ああああ
 ああああいいいいいいいいい
 test test 
-\[\begin{tikzpicture}[auto] % CheckTikZDiagram
+\[\begin{tikzpicture}[auto] % CheckTikZDiagramDefinition
 \node (a) at (0, 1.2) {$a$}; \node (x) at (1.2, 1.2) {$x$};
 \draw[->] (a) to node {$\scriptstyle f$} (x);
 \draw[->] (a) to node {$\scriptstyle g$} (x);
@@ -196,6 +226,33 @@ test test
 \end{tikzpicture}\]
 test
 \end{document}", 0);
+        }
+
+        [TestMethod]
+        public void CheckTikZDiagramIgnore()
+        {
+            TestMain(@"\documentclass[uplatex,a4j,12pt,dvipdfmx]{jsarticle}
+\author{algd}
+\title{ああああああああああああああああああ}
+\begin{document}
+test
+ああああ
+ああ$f\colon a\rightarrow x$ああああ ああああ
+あ$g\colon a\rightarrow x$ああ
+ああああいいいいいい
+いいい
+test $l\colon a\rightarrow x$ああああ ああああ
+\[\begin{tikzpicture}[auto]
+\node (a) at (0, 1.2) {$a$}; \node (x) at (1.2, 1.2) {$x$};
+\draw[->] (a) to node {$\scriptstyle f$} (x);
+\draw[->] (a) to node {$\scriptstyle g$} (x); %CheckTikZDiagramIgnore
+\draw[->] (a) to node {$\scriptstyle h$} (x); %CheckTikZDiagramIgnore
+\draw[->] (a) to node {$\scriptstyle i$} (x);
+\draw[->] (a) to node {$\scriptstyle j$} (x); \draw[->] (a) to node {$\scriptstyle k$} (x); %CheckTikZDiagramIgnore
+\draw[->] (a) to node {$\scriptstyle l$} (x);
+\end{tikzpicture}\]
+test
+\end{document}", 1);
         }
 
         [TestMethod]
@@ -218,6 +275,27 @@ test test
 \end{tikzpicture}\]
 test
 \end{document}", 0);
+        }
+
+        [TestMethod]
+        public void 不正な変数文字()
+        {
+            TestMain(@"\documentclass[uplatex,a4j,12pt,dvipdfmx]{jsarticle}
+\author{algd}
+\title{ああああああああああああああああああ}
+\begin{document}
+本文あああああ
+あああ$f\colon a\rightarrow b$ああああ．
+ああああ　ああああ
+%CheckTikZDiagram $X(#1)\colon F(#) \rightarrow G(#1)$
+あああああああ$g\colon a\rightarrow b$ああああ．
+\[\begin{tikzpicture}[auto]
+\node (a) at (0, 1.2) {$a$}; \node (x) at (1.2, 1.2) {$b$};
+\draw[->] (a) to node {$\scriptstyle f$} (x);
+\draw[->] (a) to node {$\scriptstyle g$} (x);
+\end{tikzpicture}\]
+test
+\end{document}", 1);
         }
 
         [TestMethod]

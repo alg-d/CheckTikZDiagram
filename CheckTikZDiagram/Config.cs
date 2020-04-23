@@ -14,13 +14,11 @@ namespace CheckTikZDiagram
     public class Config
     {
         private static readonly string path = "config.xml";
-        public string Yoneda { get; set; } = "";
         public string Opposite { get; set; } = "";
         public string Inverse { get; set; } = "";
         public string Adjoint { get; set; } = "";
         public string Composite { get; set; } = "";
         public string Diagonal { get; set; } = "";
-        public string Cocompletion { get; set; } = "";
         public string Product { get; set; } = "";
 
 
@@ -121,13 +119,11 @@ namespace CheckTikZDiagram
         {
             var c = new Config
             {
-                Yoneda = "\\yoneda",
                 Opposite = "\\opp",
                 Inverse = "-1",
                 Adjoint = "\\dashv",
                 Composite = "\\compo",
                 Diagonal = "\\Delta",
-                Cocompletion = "\\widehat",
                 Product = "\\otimes",
                 TikZNodeRegex = @"\\node\s*\((?<name>[^)]*)\).*\{\$(?<math>.*)\$\}\s*$",
                 TikZArrowRegex = @"\\draw\s*\[(?<arrow>[^\]]*)[^()]*\((?<source>[^()]*)\).*node.*\{\$(?<math>.*)\$\}.*\((?<target>[^()]*)\)\s*$",

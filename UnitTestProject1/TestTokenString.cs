@@ -23,8 +23,8 @@ namespace UnitTestProject1
                 @"  \test  "
             }, @"\test");
 
-            TestHelper(new string[] 
-            { 
+            TestHelper(new string[]
+            {
                 @"\alpha\beta",
                 @"\alpha \beta",
                 @"\alpha  \beta",
@@ -91,6 +91,14 @@ namespace UnitTestProject1
                 "(X Y Z) ^{a} _ {b}",
                 "( X Y Z ) ^ { a } _ { b }",
             }, "( X Y Z ) ^ { a } _ { b }");
+
+            TestHelper(new string[]
+            {
+                "a^(x)",
+                "a ^ ( x )",
+                "a^{(}x)",
+                "a ^ { ( } x )",
+            }, "a ^ { ( } x )");
         }
 
         [TestMethod]
@@ -219,6 +227,7 @@ b",
                 @"a^{\prime}",
                 @"a ^ { \prime }",
             }, @"a ^ { \prime }");
+
             TestHelper(new string[]
             {
                 @"a'b'",
@@ -227,6 +236,18 @@ b",
                 @"a'b^{ \prime }",
                 @"a^{\prime}b^{ \prime }",
             }, @"a ^ { \prime } b ^ { \prime }");
+
+            TestHelper(new string[]
+            {
+                @"ab^{\test'}",
+                @"ab ^{\test'}",
+                @"ab^ {\test'}",
+                @"ab^{ \test '}",
+                @"ab ^ { \test ' } ",
+                @"ab^ { \test^{\prime} }",
+                @"ab^{ \test^{ \prime } }",
+                @"a b^{ \test ^ { \prime } }",
+            }, @"a b ^ { \test ^ { \prime } }");
         }
 
         [TestMethod]
@@ -241,6 +262,16 @@ b",
                 @"\test{#1 }",
                 @"\test{ #1 }",
             }, @"\test { #1 }");
+
+            TestHelper(new string[]
+            {
+                @"#1\test#2",
+                @"#1 \test#2",
+                @"#1\test #2",
+                @"#1 \test #2",
+                @" #1\test#2 ",
+                @" #1 \test #2 ",
+            }, @"#1 \test #2");
 
             TestHelper(new string[]
             {
@@ -262,7 +293,7 @@ b",
         }
 
         [TestMethod]
-        public void 変数st()
+        public void 変数abst()
         {
             TestHelper(new string[]
             {
@@ -319,12 +350,22 @@ b",
 
             TestHelper(new string[]
             {
+                @"\test{#1ab}",
+                @"\test {#1a b}",
+                @"\test { #1a b}",
+                @"\test { #1a b }",
+                @"\test{#1a b }",
+                @"\test{ #1a b }",
+            }, @"\test { #1a b }");
+
+            TestHelper(new string[]
+            {
                 @"ab^{#1s#2a}_{#4b#5t}",
                 @"ab ^{#1s#2a} _{#4b#5t}",
                 @"ab^{ #1s#2a }_{ #4b#5t }",
                 @"ab^{ #1s #2a }_{ #4b #5t }",
                 @"ab ^{ #1s #2a } _{ #4b #5t }",
-            }, @"a b ^ { #1s #2 a } _ { #4 b #5t }");
+            }, @"a b ^ { #1s #2a } _ { #4b #5t }");
         }
 
         [DataTestMethod]
@@ -409,6 +450,21 @@ b",
         {
             text.ToTokenString().EndsWith('?').Is(result);
         }
+
+
+        [DataTestMethod]
+        [DataRow(@"#")]
+        [DataRow(@"#a")]
+        [DataRow(@"\test#a")]
+        [DataRow(@"\test#")]
+        [DataRow(@"#1#2#3#a#4")]
+        [DataRow(@"#\test")]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void 例外(string text)
+        {
+            text.ToTokenString();
+        }
+
 
 
         private void TestHelper(string[] list, string value)

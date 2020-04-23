@@ -30,6 +30,7 @@ namespace CheckTikZDiagram
         private readonly string[] _tikzCommands;
         private readonly int _line;
         private readonly bool _definition;
+        private readonly bool _omitOperator;
         private readonly bool _errorOnly;
 
         /// <summary>
@@ -38,11 +39,12 @@ namespace CheckTikZDiagram
         /// <param name="tikz">tikzpicture環境を与える文字列</param>
         /// <param name="line">tikzpicture環境の最終行の行数</param>
         /// <param name="definition">定義として使用する場合true</param>
+        /// <param name="omitOperator">演算子の省略を認める場合true</param>
         /// <param name="errorOnly">エラーのみ出力する場合true</param>
         /// <param name="defDic">使用する辞書</param>
         /// <param name="paramList">使用するパラメータ付き射のリスト</param>
         /// <param name="functorList">使用する関手のリスト</param>
-        public TikZDiagram(string tikz, int line, bool definition, bool errorOnly, 
+        public TikZDiagram(string tikz, int line, bool definition, bool omitOperator, bool errorOnly, 
             IDictionary<TokenString, Morphism> defDic, IList<Morphism> paramList, IList<Functor> functorList)
         {
             _definedMorphismDictionary = defDic;
@@ -51,6 +53,7 @@ namespace CheckTikZDiagram
             _tikzCommands = tikz.Split('\n');
             _line = line - (_tikzCommands.Length - 1);
             _definition = definition;
+            _omitOperator = omitOperator;
             _errorOnly = errorOnly;
         }
 
@@ -67,6 +70,11 @@ namespace CheckTikZDiagram
             // 対象と射の情報を収集する
             for (int i = 0; i < _tikzCommands.Length; i++)
             {
+                if (_tikzCommands[i].EndsWith("CheckTikZDiagramIgnore"))
+                {
+                    continue;
+                }
+
                 var ys = _tikzCommands[i].Split(';');
                 for (int j = 0; j < ys.Length; j++)
                 {
@@ -128,7 +136,7 @@ namespace CheckTikZDiagram
                 var list = new List<string>();
                 foreach (var def in CreateMorphism(arrow.MathObject, source.MathObject, target.MathObject))
                 {
-                    if (CheckNode(def.Source, source.MathObject) && CheckNode(def.Target, target.MathObject))
+                    if (EqualsAsMathObject(def.Source, source.MathObject) && EqualsAsMathObject(def.Target, target.MathObject))
                     {
                         yield return new CheckResult(num, $"[TikZ] {arrow.OriginalText.Trim()}: {source} → {target}\n[def ] {def}", false, !_errorOnly);
                         goto NEXT_ARROW;
@@ -219,7 +227,7 @@ namespace CheckTikZDiagram
             foreach (var item in KanLift(seq, source, target)) yield return item;
 
             // 添え字つきの場合
-            foreach (var item in WithIndex(seq)) yield return item;
+            foreach (var item in WithIndex(seq, source, target)) yield return item;
 
             // 射の合成(二項演算)の場合
             var compo2 = CompositeOperator(seq, source, target);
@@ -282,23 +290,22 @@ namespace CheckTikZDiagram
 
                     // 持っている場合、source, targetの情報を使って変数を埋める
                     var p = new Dictionary<string, MathObject>();
-                    if (source != null && !applied.Source.IsSameType(source, p))
-                    {
-                        continue;
-                    }
-
+                    if (source != null && !applied.Source.IsSameType(source, p)) continue;
+                    
                     var q = new Dictionary<string, MathObject>();
-                    if (target != null && !applied.Target.IsSameType(target, q))
-                    {
-                        continue;
-                    }
+                    if (target != null && !applied.Target.IsSameType(target, q)) continue;
+
+                    // p, qに矛盾がないか確認
+                    if (!CheckParameter(p)) continue;
+
+                    if (!CheckParameter(q)) continue;
 
                     foreach (var key in p.Keys.Where(x => !x.EndsWith('s') && !x.EndsWith('t')))
                     {
                         if (q.ContainsKey(key))
                         {
                             // pとqが矛盾している場合は無効
-                            if (!CheckNode(q[key], p[key]))
+                            if (!EqualsAsMathObject(q[key], p[key]))
                             {
                                 goto NEXT_APPLIED;
                             }
@@ -350,6 +357,22 @@ namespace CheckTikZDiagram
                 NEXT_APPLIED:;
                 }
             }
+        }
+
+        private bool CheckParameter(IReadOnlyDictionary<string, MathObject> parameters)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                if (parameters.TryGetValue($"#{i}a", out var a) && parameters.TryGetValue($"#{i}b", out var b))
+                {
+                    if (!EqualsAsMathObject(a, b))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         private IEnumerable<Morphism> Inverse(MathSequence seq, MathObject? source, MathObject? target)
@@ -453,58 +476,69 @@ namespace CheckTikZDiagram
             return new Morphism(math, temp.First().Source, temp.Last().Target, MorphismType.OneMorphism, temp.SelectMany(mor => mor.GetDefList()));
         }
 
-        private IEnumerable<Morphism> WithIndex(MathSequence seq)
+        private IEnumerable<Morphism> WithIndex(MathSequence seq, MathObject? source, MathObject? target)
         {
-            if (seq.Sub == null)
-            {
-                yield break;
-            }
-
+            if (seq.Sub == null) yield break;
+            
             var main = seq.CopyWithoutSub();
+            var (sFunc, sValue) = GetFunctor(source, seq.Sub.ToTokenString());
+            var (tFunc, tValue) = GetFunctor(target, seq.Sub.ToTokenString());
 
-            // Main部分が自然変換(2-morphism)のものが処理対象
-            foreach (var mor in CreateMorphism(main, null, null).Where(x => x.Type == MorphismType.NaturalTransformation
+            // main部分が自然変換(もしくは2-morphism)のものが処理対象
+            foreach (var mor in CreateMorphism(main, sFunc, tFunc).Where(x => x.Type == MorphismType.NaturalTransformation
                                                                          || x.Type == MorphismType.TwoMorphism))
             {
                 // 添え字に関手がついている場合
-                foreach (var sub in CreateMorphism(seq.Sub, null, null))
+                foreach (var sub in CreateMorphism(seq.Sub, sValue, tValue).Where(x => x.IsFunctor))
                 {
-                    if (sub.Type == MorphismType.Functor || sub.Type == MorphismType.ContravariantFunctor || sub.Type == MorphismType.Bifunctor)
-                    {
-                        yield return new Morphism(
-                               seq,
-                               mor.Source.Add(sub.Source),
-                               mor.Target.Add(sub.Target),
-                               mor.Type,
-                               mor.GetDefList().Concat(sub.GetDefList())
-                        );
-                    }
+                    yield return new Morphism(
+                            seq,
+                            mor.Source.Add(sub.Source),
+                            mor.Target.Add(sub.Target),
+                            mor.Type,
+                            mor.GetDefList().Concat(sub.GetDefList())
+                    );
                 }
 
                 // 2変数の場合
                 if (seq.Sub is MathSequence subSeq && subSeq.List.Count == 2)
                 {
-                    foreach (var f in CreateMorphism(mor.Source, null, null))
+                    foreach (var f in CreateMorphism(mor.Source, null, null).Where(x => x.Type == MorphismType.Bifunctor))
                     {
-                        if (f.Type == MorphismType.Bifunctor)
-                        {
-                            yield return new Morphism(
-                                seq,
-                                Evaluate(mor.Source, subSeq.List[0], subSeq.List[1]),
-                                Evaluate(mor.Target, subSeq.List[0], subSeq.List[1]),
-                                MorphismType.OneMorphism,
-                                mor.GetDefList().Concat(f.GetDefList())
-                            );
-                            goto NEXT_LOOP;
-                        }
+                        yield return new Morphism(
+                            seq,
+                            EvaluateBifunctor(mor.Source, subSeq.List[0], subSeq.List[1]),
+                            EvaluateBifunctor(mor.Target, subSeq.List[0], subSeq.List[1]),
+                            MorphismType.OneMorphism,
+                            mor.GetDefList().Concat(f.GetDefList())
+                        );
                     }
                 }
 
                 // それ以外の場合
-                yield return new Morphism(seq, Evaluate(mor.Source, seq.Sub), Evaluate(mor.Target, seq.Sub), MorphismType.OneMorphism,
+                yield return new Morphism(seq, Evaluate(mor.Source, sValue, seq.Sub), Evaluate(mor.Target, tValue, seq.Sub), MorphismType.OneMorphism,
                     mor.GetDefList());
+            }
 
-            NEXT_LOOP:;
+            static (MathObject?, MathObject?) GetFunctor(MathObject? math, TokenString script)
+            {
+                if (!(math is MathSequence seq) || seq.List.Count <= 1) return (null, null);
+
+                var last = seq.List.Last();
+                if (last.ToTokenString().Equals(script))
+                {
+                    return (seq.SubSequence(0, seq.List.Count - 1), last);
+                }
+                else if (last is MathSequence s && s.Sup == null && s.Sub == null
+                    && s.LeftBracket.Equals(Token.LeftParenthesis) && s.RightBracket.Equals(Token.RightParenthesis)
+                    && s.Main.Equals(script))
+                {
+                    return (seq.SubSequence(0, seq.List.Count - 1), last);
+                }
+                else
+                {
+                    return (null, null);
+                }
             }
         }
 
@@ -538,8 +572,8 @@ namespace CheckTikZDiagram
                             {
                                 yield return new Morphism(
                                     seq,
-                                    Evaluate(func.Name, value.Source),
-                                    Evaluate(func.Name, value.Target),
+                                    Evaluate(func.Name, null, value.Source),
+                                    Evaluate(func.Name, null, value.Target),
                                     MorphismType.OneMorphism,
                                     func.GetDefList().Concat(value.GetDefList())
                                 );
@@ -549,8 +583,8 @@ namespace CheckTikZDiagram
                             {
                                 yield return new Morphism(
                                     seq,
-                                    Evaluate(func.Name, value.Target),
-                                    Evaluate(func.Name, value.Source),
+                                    Evaluate(func.Name, null, value.Target),
+                                    Evaluate(func.Name, null, value.Source),
                                     MorphismType.OneMorphism,
                                     func.GetDefList().Concat(value.GetDefList())
                                 );
@@ -598,11 +632,11 @@ namespace CheckTikZDiagram
             }
         }
 
-        private MathSequence Evaluate(MathObject func, MathObject value)
+        private MathSequence Evaluate(MathObject func, MathObject? value0, MathObject value1)
         {
             if (func.ToString().Contains("-"))
             {
-                var parameters = new Dictionary<string, MathObject>() { { "-", value } };
+                var parameters = new Dictionary<string, MathObject>() { { "-", value1 } };
                 var x = func.ApplyParameters(parameters, false).FirstOrDefault();
                 if (x is MathSequence seq)
                 {
@@ -610,10 +644,17 @@ namespace CheckTikZDiagram
                 }
             }
 
-            return func.Add(value.SetBracket());
+            if (value0 != null)
+            {
+                return func.Add(value0);
+            }
+            else
+            {
+                return func.Add(value1.SetBracket());
+            }
         }
 
-        private MathSequence Evaluate(MathObject func, MathObject value1, MathObject value2)
+        private MathSequence EvaluateBifunctor(MathObject func, MathObject value1, MathObject value2)
         {
             var value = new MathSequence(new[] { value1, value2 }, ",");
             return func.Add(value.SetBracket());
@@ -653,8 +694,8 @@ namespace CheckTikZDiagram
                     {
                         yield return new Morphism(
                             seq,
-                            Evaluate(mor.Name, left.Source, right.Source),
-                            Evaluate(mor.Name, left.Target, right.Target),
+                            EvaluateBifunctor(mor.Name, left.Source, right.Source),
+                            EvaluateBifunctor(mor.Name, left.Target, right.Target),
                             MorphismType.OneMorphism,
                             mor.GetDefList().Concat(left.GetDefList()).Concat(right.GetDefList())
                         );
@@ -666,8 +707,8 @@ namespace CheckTikZDiagram
                         {
                             yield return new Morphism(
                                 seq,
-                                Evaluate(mor.Name, left.Source, sRight),
-                                Evaluate(mor.Name, left.Target, sRight),
+                                EvaluateBifunctor(mor.Name, left.Source, sRight),
+                                EvaluateBifunctor(mor.Name, left.Target, sRight),
                                 MorphismType.OneMorphism,
                                 mor.GetDefList().Concat(left.GetDefList())
                             );
@@ -680,8 +721,8 @@ namespace CheckTikZDiagram
                         {
                             yield return new Morphism(
                                 seq,
-                                Evaluate(mor.Name, sLeft, right.Source),
-                                Evaluate(mor.Name, sLeft, right.Target),
+                                EvaluateBifunctor(mor.Name, sLeft, right.Source),
+                                EvaluateBifunctor(mor.Name, sLeft, right.Target),
                                 MorphismType.OneMorphism,
                                 mor.GetDefList().Concat(right.GetDefList())
                             );
@@ -712,20 +753,22 @@ namespace CheckTikZDiagram
             }
 
             var flag = false;
-            if (source is MathSequence sSeq && DivideWithoutOp(sSeq, out var sLeft, out var sRight)
-                && target is MathSequence tSeq && DivideWithoutOp(tSeq, out var tLeft, out var tRight))
+            if (_omitOperator)
             {
-                foreach (var m in mList)
+                if (source is MathSequence sSeq && DivideWithoutOp(sSeq, out var sLeft, out var sRight)
+                    && target is MathSequence tSeq && DivideWithoutOp(tSeq, out var tLeft, out var tRight))
                 {
-                    foreach (var item in BinaryOperatorHelper(seq, source, target, m.left, m.right, sLeft, sRight, tLeft, tRight, null))
+                    foreach (var m in mList)
                     {
-                        yield return item;
+                        foreach (var item in BinaryOperatorHelper(seq, source, target, m.left, m.right, sLeft, sRight, tLeft, tRight, null))
+                        {
+                            yield return item;
+                        }
                     }
+
+                    flag = true;
                 }
-
-                flag = true;
             }
-
 
             if (sList.Count == 0 && !flag)
             {
@@ -826,8 +869,8 @@ namespace CheckTikZDiagram
                 yield return item;
             }
 
-            if ((sRight == null || CheckNode(sRight, mRight))
-                && (tRight == null || CheckNode(tRight, mRight)))
+            if ((sRight == null || EqualsAsMathObject(sRight, mRight))
+                && (tRight == null || EqualsAsMathObject(tRight, mRight)))
             {
                 foreach (var left in leftArray)
                 {
@@ -840,8 +883,8 @@ namespace CheckTikZDiagram
                 }
             }
 
-            if ((sLeft == null || CheckNode(sLeft, mLeft))
-                && (tLeft == null || CheckNode(tLeft, mLeft)))
+            if ((sLeft == null || EqualsAsMathObject(sLeft, mLeft))
+                && (tLeft == null || EqualsAsMathObject(tLeft, mLeft)))
             {
                 foreach (var right in rightArray)
                 {
@@ -920,20 +963,20 @@ namespace CheckTikZDiagram
         }
 
 
-        public bool CheckNode(MathObject left, MathObject right)
+        public bool EqualsAsMathObject(MathObject left, MathObject right)
         {
             var key = (left.ToTokenString(), right.ToTokenString());
 
             // 処理本体(キャッシュに値がある場合はそれを使用する)
             if (!_cacheCheckNode.ContainsKey(key))
             {
-                _cacheCheckNode[key] = CheckNodeMain(left, right);
+                _cacheCheckNode[key] = EqualsAsMathObjectMain(left, right);
             }
 
             return _cacheCheckNode[key];
 
 
-            bool CheckNodeMain(MathObject left, MathObject right)
+            bool EqualsAsMathObjectMain(MathObject left, MathObject right)
             {
                 foreach (var leftValue in EvaluateFunctor(left))
                 {

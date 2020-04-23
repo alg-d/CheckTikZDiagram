@@ -103,26 +103,20 @@
 
                 <Label   Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Content="以下を表すTeXコマンド" />
 
-                <Label   Grid.Row="2" Grid.Column="1" Content="米田埋込" />
-                <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding Config.Yoneda}" />
+                <Label   Grid.Row="2" Grid.Column="1" Content="opposite" />
+                <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding Config.Opposite}" />
 
-                <Label   Grid.Row="3" Grid.Column="1" Content="opposite" />
-                <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding Config.Opposite}" />
+                <Label   Grid.Row="3" Grid.Column="1" Content="逆射" />
+                <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding Config.Inverse}" />
 
-                <Label   Grid.Row="4" Grid.Column="1" Content="逆射" />
-                <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding Config.Inverse}" />
+                <Label   Grid.Row="4" Grid.Column="1" Content="随伴" />
+                <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding Config.Adjoint}" />
 
-                <Label   Grid.Row="5" Grid.Column="1" Content="随伴" />
-                <TextBox Grid.Row="5" Grid.Column="2" Text="{Binding Config.Adjoint}" />
+                <Label   Grid.Row="5" Grid.Column="1" Content="射の合成" />
+                <TextBox Grid.Row="5" Grid.Column="2" Text="{Binding Config.Composite}" />
 
-                <Label   Grid.Row="6" Grid.Column="1" Content="射の合成" />
-                <TextBox Grid.Row="6" Grid.Column="2" Text="{Binding Config.Composite}" />
-
-                <Label   Grid.Row="7" Grid.Column="1" Content="対角関手" />
-                <TextBox Grid.Row="7" Grid.Column="2" Text="{Binding Config.Diagonal}" />
-
-                <Label   Grid.Row="8" Grid.Column="1" Content="余完備化" />
-                <TextBox Grid.Row="8" Grid.Column="2" Text="{Binding Config.Cocompletion}" />
+                <Label   Grid.Row="6" Grid.Column="1" Content="対角関手" />
+                <TextBox Grid.Row="6" Grid.Column="2" Text="{Binding Config.Diagonal}" />
 
                 <Label                     Grid.Row="1" Grid.Column="3" Content="圏とみなすTeXコマンド" />
                 <local:EditCollectionPanel Grid.Row="2" Grid.Column="3" Grid.RowSpan="8" Margin="10,0,0,0" Height="300" VerticalAlignment="Top"

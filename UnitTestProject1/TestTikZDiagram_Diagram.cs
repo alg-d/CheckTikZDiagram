@@ -229,14 +229,11 @@ node
 \node (c) at (0, -1.2) {$Ka$}; \node (z) at (1.2, -1.2) {$Kb$};
 \node (d) at (0, -3) {$K(a)$}; \node (w) at (1.2, -3) {$K(b)$};
 \node (aaa) at (0, -4) {$H(a)$};      \node (xxx) at (1.2, -4) {$H(b)$};
-\node (bbb) at (0, -5) {$a\times u$}; \node (yyy) at (1.2, -5) {$b\times u$};
 \draw[->] (a) to node {$\scriptstyle \theta_a$} (x);
 \draw[->] (b) to node {$\scriptstyle K\theta_b$} (y);
 \draw[->] (c) to node {$\scriptstyle Kf$} (z);
 \draw[->] (d) to node {$\scriptstyle Kf$} (w);
 \draw[->] (aaa) to node {$\scriptstyle Hf$} (xxx);
-\draw[->] (bbb) to node {$\scriptstyle Hf$} (yyy);
-\draw[->] (aaa) to node {$\scriptstyle g$} (xxx);
 \end{tikzpicture
 ";
 
@@ -248,9 +245,7 @@ node
                 { "f".ToTokenString(), ToMorphismHelp(@"f", "a", "b", MorphismType.OneMorphism) },
                 { "g".ToTokenString(), ToMorphismHelp(@"g", @"a\times u", @"b\times u", MorphismType.OneMorphism) },
             };
-            var func = ExtensionsInTest.CreateDefaultFunctors().ToList();
-            func.Add(Functor.Create(@"Functor H#1, #1\times u"));
-            new TikZDiagram(tex, -1, false, true, dic, ExtensionsInTest.CreateDefaultMorphisms(), func)
+            CreateTikZDiagram(tex, dic)
                 .CheckDiagram()
                 .TestError();
         }
@@ -308,7 +303,7 @@ node
                 { "g_j".ToTokenString(), ToMorphismHelp(@"g_j", @"a_0", @"a_1", MorphismType.OneMorphism) },
             };
             var func = ExtensionsInTest.CreateDefaultFunctors().ToList();
-            new TikZDiagram(tex, -1, false, true, dic, ExtensionsInTest.CreateDefaultMorphisms(), func)
+            new TikZDiagram(tex, -1, false, false, true, dic, ExtensionsInTest.CreateDefaultMorphisms(), func)
                 .CheckDiagram()
                 .TestError();
         }
@@ -603,6 +598,8 @@ node
 \node (b) at (0, 0) {$F(b)$}; \node (y) at (1.2, 0) {$G(b)$};
 \node (c) at (0, -1.2) {$Fa$}; \node (z) at (1.2, -1.2) {$Ga$};
 \node (d) at (0, -3) {$Fb$}; \node (w) at (1.2, -3) {$Gb$};
+\node (s) at (0, -4) {$FKa$}; \node (t) at (1.2, -4) {$GKa$};
+\node (s2) at (0, -5) {$F(Ka)$}; \node (t2) at (1.2, -5) {$G(Ka)$};
 \draw[->] (a) to node {$\scriptstyle \theta_a$} (x);
 \draw[->] (x) to node {$\scriptstyle Gf$} (y);
 \draw[->] (a) to node {$\scriptstyle F(f)$} (b);
@@ -612,6 +609,9 @@ node
 \draw[->] (z) to node {$\scriptstyle Gf$} (w);
 \draw[->] (c) to node {$\scriptstyle F(f)$} (d);
 \draw[->] (d) to node {$\scriptstyle \theta_{b}$} (w);
+
+\draw[->] (s) to node {$\scriptstyle \theta_{Ka}$} (t);
+\draw[->] (s2) to node {$\scriptstyle \theta_{Ka}$} (t2);
 \end{tikzpicture
 ";
 
@@ -620,10 +620,11 @@ node
                 { @"\theta".ToTokenString(), ToMorphismHelp(@"\theta", "F", "G", MorphismType.NaturalTransformation) },
                 { "F".ToTokenString(), ToMorphismHelp(@"F", @"\cat{C}", @"\cat{D}", MorphismType.Functor) },
                 { "G".ToTokenString(), ToMorphismHelp(@"G", @"\cat{C}", @"\cat{D}", MorphismType.Functor) },
+                { "K".ToTokenString(), ToMorphismHelp(@"K", @"\cat{D}", @"\Set", MorphismType.Functor) },
                 { "f".ToTokenString(), ToMorphismHelp(@"f", "a", "b", MorphismType.OneMorphism) },
             };
             var func = ExtensionsInTest.CreateDefaultFunctors().ToList();
-            new TikZDiagram(tex, -1, false, true, dic, ExtensionsInTest.CreateDefaultMorphisms(), func)
+            new TikZDiagram(tex, -1, false, false, true, dic, ExtensionsInTest.CreateDefaultMorphisms(), func)
                 .CheckDiagram()
                 .TestError();
         }
@@ -652,7 +653,7 @@ node
                 { "\\theta".ToTokenString(), ToMorphismHelp("\\theta", "F", "G", MorphismType.NaturalTransformation) },
             };
             var list = ExtensionsInTest.CreateDefaultFunctors().ToList();
-            new TikZDiagram(tex, -1, false, true, dic, Array.Empty<Morphism>(), list)
+            new TikZDiagram(tex, -1, false, false, true, dic, Array.Empty<Morphism>(), list)
                 .CheckDiagram()
                 .TestError();
         }
@@ -686,7 +687,7 @@ node
             list.Add(mor4);
             list.Add(mor5);
 
-            new TikZDiagram(tex, -1, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
                 .CheckDiagram()
                 .TestError();
         }
@@ -775,7 +776,7 @@ node
 ";
 
             var dic = new Dictionary<TokenString, Morphism>();
-            new TikZDiagram(tex1, -1, true, true, dic, Array.Empty<Morphism>(), Array.Empty<Functor>())
+            new TikZDiagram(tex1, -1, true, false, true, dic, Array.Empty<Morphism>(), Array.Empty<Functor>())
                 .CheckDiagram()
                 .TestError();
             CreateTikZDiagram(tex2, dic)
@@ -808,7 +809,7 @@ node
             {
                 ToMorphismHelp(@"\alpha^{#1?}_{#2?#3?#4?}", @"(#2\ocmp #3)\ocmp #4", @"#2\ocmp (#3\ocmp #4)", MorphismType.OneMorphism)
             };
-            new TikZDiagram(tex, -1, false, true, dic, list, Array.Empty<Functor>())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, Array.Empty<Functor>())
                 .CheckDiagram()
                 .TestError();
         }
@@ -835,7 +836,7 @@ node
             list.Add(Morphism.Create(@"\alpha^{#1?}_{#2?#3?#4?}\colon (#2\otimes #3)\otimes #4\rightarrow #2\otimes (#3\otimes #4)").TestSingle());
             list.Add(Morphism.Create(@"m_{#1?#2?#3?}\colon\encat{#4}(#2, #3)\otimes \encat{#4}(#1, #2)\rightarrow \encat{#4}(#1, #3)").TestSingle());
 
-            new TikZDiagram(tex, -1, false, true, dic, list, Array.Empty<Functor>())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, Array.Empty<Functor>())
                 .CheckDiagram()
                 .TestError();
         }
@@ -863,7 +864,7 @@ node
                 ToMorphismHelp(@"\lambda^{#1?}_{#2?}", @"\id_{#3}\ocmp #2", @"#2", MorphismType.OneMorphism),
                 ToMorphismHelp(@"\rho^{#1?}_{#2?}", @"#2\ocmp\id_{#3}", @"#2", MorphismType.OneMorphism)
             };
-            new TikZDiagram(tex, -1, false, true, dic, list, Array.Empty<Functor>())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, Array.Empty<Functor>())
                 .CheckDiagram()
                 .TestError();
         }
@@ -889,7 +890,7 @@ node
             list.Add(ToMorphismHelp(@"i", @"#1", @"[\Vunit, #1]", MorphismType.OneMorphism));
             list.Add(ToMorphismHelp(@"\rho^{#1?}_{#2?}", @"#2\otimes\Vunit", @"#2", MorphismType.OneMorphism));
 
-            new TikZDiagram(tex, -1, false, true, dic, list, Array.Empty<Functor>())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, Array.Empty<Functor>())
                 .CheckDiagram()
                 .TestError();
         }
@@ -922,7 +923,7 @@ node
             list.Add(ToMorphismHelp(@"[#1, #2]", @"[#1t, #2]", @"[#1s, #2]", MorphismType.OneMorphism));
             list.Add(ToMorphismHelp(@"[#1, #2]", @"[#1t, #2s]", @"[#1s, #2t]", MorphismType.OneMorphism));
 
-            new TikZDiagram(tex, -1, false, true, dic, list, Array.Empty<Functor>())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, Array.Empty<Functor>())
                 .CheckDiagram()
                 .TestError();
         }
@@ -945,7 +946,7 @@ node
                 Morphism.Create(@"f_{#4?}\colon \Hom_{#1?}(#3, #4)\rightarrow \Hom_{#2?}(#3, #4)").Single()
             };
 
-            new TikZDiagram(tex, -1, false, true, dic, list, Array.Empty<Functor>())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, Array.Empty<Functor>())
                 .CheckDiagram()
                 .TestError();
         }
@@ -970,7 +971,7 @@ node
             };
             var list = ExtensionsInTest.CreateDefaultMorphisms();
 
-            new TikZDiagram(tex, -1, false, true, dic, list, Array.Empty<Functor>())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, Array.Empty<Functor>())
                 .CheckDiagram()
                 .TestError();
         }
@@ -995,7 +996,7 @@ node
             };
             var list = ExtensionsInTest.CreateDefaultMorphisms();
 
-            new TikZDiagram(tex, -1, false, true, dic, list, Array.Empty<Functor>())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, Array.Empty<Functor>())
                 .CheckDiagram()
                 .TestError();
         }
@@ -1018,7 +1019,62 @@ node
                 { @"\theta".ToTokenString(), Morphism.Create(@"\theta\colon F\Rightarrow G").Single() },
             };
             var list = ExtensionsInTest.CreateDefaultMorphisms();
-            new TikZDiagram(tex, -1, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
+                .CheckDiagram()
+                .TestError();
+        }
+
+        [TestMethod]
+        public void 関手()
+        {
+            var tex = @"
+\node (aaa) at (0, 2) {$H(a)$};      \node (xxx) at (1, 2) {$H(b)$};
+\node (bbb) at (0, 1) {$a\times u$}; \node (yyy) at (1, 1) {$b\times u$};
+\node (ccc) at (0, 0) {$F(i)\times u$}; \node (zzz) at (1, 0) {$G(i)\times u$};
+\draw[->] (aaa) to node {$\scriptstyle Hf$} (xxx);
+\draw[->] (aaa) to node {$\scriptstyle g$} (xxx)
+\draw[->] (bbb) to node {$\scriptstyle Hf$} (yyy);
+\draw[->] (ccc) to node {$\scriptstyle H\theta_i$} (zzz);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { @"\theta".ToTokenString(), ToMorphismHelp(@"\theta", "F", "G", MorphismType.NaturalTransformation) },
+                { "K".ToTokenString(), ToMorphismHelp(@"K", @"\cat{C}", @"\cat{D}", MorphismType.Functor) },
+                { "H".ToTokenString(), ToMorphismHelp(@"H", @"\cat{C}", @"\cat{D}", MorphismType.Functor) },
+                { "f".ToTokenString(), ToMorphismHelp(@"f", "a", "b", MorphismType.OneMorphism) },
+                { "g".ToTokenString(), ToMorphismHelp(@"g", @"a\times u", @"b\times u", MorphismType.OneMorphism) },
+            };
+            var func = ExtensionsInTest.CreateDefaultFunctors().ToList();
+            func.Add(Functor.Create(@"Functor H#1, #1\times u"));
+            new TikZDiagram(tex, -1, false, false, true, dic, ExtensionsInTest.CreateDefaultMorphisms(), func)
+                .CheckDiagram()
+                .TestError();
+        }
+
+        [TestMethod]
+        public void 関手_変数()
+        {
+            var tex = @"
+\node (a) at (0, 2) {$\pair{F^at, F^bt}\pair{F^as, F^at}$}; \node (x) at (1, 2) {$\pair{F^as, F^bt}$};
+\node (b) at (0, 1) {$\pair{G^ta, G^tb}\pair{F^as, F^at}$}; \node (y) at (1, 1) {$\pair{F^as, G^tb}$};
+\node (c) at (0, 0) {$\pair{F^at, F^bt}\pair{F^as, F^at}$}; \node (z) at (1, 0) {$\pair{F^as, G^tb}$};
+\draw[->] (c) to node {$\scriptstyle m$} (z);
+\draw[->] (a) to node {$\scriptstyle m$} (x);
+\draw[->] (b) to node {$\scriptstyle m$} (y);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = new List<Morphism>
+            {
+                Morphism.Create(@"m_{#1?#2?#3?} \colon \pair{#2a, #3}\pair{#1, #2b} \rightarrow \pair{#1, #3}").TestSingle()
+            };
+            var func = ExtensionsInTest.CreateDefaultFunctors().ToList();
+            func.Add(Functor.Create(@"Functor F^{#1}#2, G^{#2}#1"));
+            func.Add(Functor.Create(@"Functor \pair{#1, #2}\pair{#3, #4}, \pair{#1, #2}\pair{#3, #4}"));
+            new TikZDiagram(tex, -1, false, false, true, dic, list, func)
                 .CheckDiagram()
                 .TestError();
         }
@@ -1056,7 +1112,7 @@ node
             list.Add(ToMorphismHelp(@"\mu_{#1}", @"T#1", @"\dcoprod_{j\in\Ob(\cat{J})}Tj", MorphismType.OneMorphism));
             list.Add(ToMorphismHelp(@"\nu_f", @"T(\dom f)", @"\dcoprod_{f\in\Mor(\cat{J})}T(\dom f)", MorphismType.OneMorphism));
 
-            new TikZDiagram(tex, -1, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
                 .CheckDiagram()
                 .TestError();
         }
@@ -1084,7 +1140,7 @@ node
             };
             var list = ExtensionsInTest.CreateDefaultMorphisms();
 
-            new TikZDiagram(tex, -1, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
                 .CheckDiagram()
                 .TestError();
         }
@@ -1137,7 +1193,7 @@ node
             list.Add(Morphism.Create(@"m_{#1?#2?#3?}\colon\encat{#4}(#2, #3)\otimes \encat{#4}(#1, #2)\rightarrow \encat{#4}(#1, #3)").TestSingle());
             list.Add(Morphism.Create(@"m_{#1?#2?#3?}\colon\encat{#4}(#2, #3)\otimes \encat{#4}(#1, #2)\rightarrow \encat{#4}(#1, #3)").TestSingle());
 
-            var xs = new TikZDiagram(tex, -1, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
+            var xs = new TikZDiagram(tex, -1, false, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
                 .CheckDiagram();
 
             foreach (var item in xs)
@@ -1168,7 +1224,7 @@ node
             var list = ExtensionsInTest.CreateDefaultMorphisms();
             list.Add(Morphism.Create(@"M^{#1#2#3}\colon\check{\bicat{B}}(#2, #3)\times\check{\bicat{B}}(#1, #2)\rightarrow\check{\bicat{B}}(#1, #3)").TestSingle());
 
-            new TikZDiagram(tex, -1, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
+            new TikZDiagram(tex, -1, false, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
                 .CheckDiagram()
                 .TestError();
         }
@@ -1233,14 +1289,14 @@ node
             list.Add(Morphism.Create(@"\ev\colon [#1, #2]#1\rightarrow #2").TestSingle());
             list.Add(Morphism.Create(@"m_{#1?#2?#3?}\colon [#2, #3][#1, #2]\rightarrow [#1, #3]").TestSingle());
 
-            new TikZDiagram(tex, -1, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
+            new TikZDiagram(tex, -1, false, true, true, dic, list, ExtensionsInTest.CreateDefaultFunctors().ToList())
                 .CheckDiagram()
                 .TestError();
         }
 
 
         private TikZDiagram CreateTikZDiagram(string tex, Dictionary<TokenString, Morphism> dic)
-            => new TikZDiagram(tex, -1, false, true, dic, ExtensionsInTest.CreateDefaultMorphisms(), ExtensionsInTest.CreateDefaultFunctors().ToList());
+            => new TikZDiagram(tex, -1, false, false, true, dic, ExtensionsInTest.CreateDefaultMorphisms(), ExtensionsInTest.CreateDefaultFunctors().ToList());
 
         private Morphism ToMorphismHelp(string name, string source, string target, MorphismType type)
             => new Morphism(name, source, target, type, -1);

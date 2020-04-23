@@ -54,6 +54,10 @@ namespace CheckTikZDiagram
         /// </summary>
         public MorphismType Type { get; private set; }
 
+        public bool IsFunctor => Type == MorphismType.Functor 
+                              || Type == MorphismType.ContravariantFunctor
+                              || Type == MorphismType.Bifunctor;
+
         public Morphism(MathObject math, MathObject source, MathObject target, MorphismType type, IEnumerable<Morphism> defMorphismList)
         {
             Name = math;
@@ -140,18 +144,17 @@ namespace CheckTikZDiagram
         /// <returns></returns>
         public static IEnumerable<Morphism> Create(string text, int defLine = -1)
         {
-            foreach (var (math, source, target, arrow) in CreateMainNormal(text))
+            foreach (var (math, source, target, arrow) in CreateMainNormal(text).Concat(CreateMainHom(text)))
             {
-                yield return new Morphism(math, source, target, GetMorphismType(arrow), defLine);
-            }
-
-            foreach (var (math, source, target) in CreateMainHom(text))
-            {
-                yield return new Morphism(math, source, target, MorphismType.OneMorphism, defLine);
+                // 射の名前ではs変数, t変数は使用不可
+                if (!math.GetVariables().Any(x => x.EndsWith('s') || x.EndsWith('t')))
+                {
+                    yield return new Morphism(math, source, target, arrow, defLine);
+                }
             }
         }
 
-        private static IEnumerable<(MathObject, MathObject, MathObject, string)> CreateMainNormal(string text)
+        private static IEnumerable<(MathObject, MathObject, MathObject, MorphismType)> CreateMainNormal(string text)
         {
             var d = _doubleColon.Match(text);
             if (d.Success)
@@ -185,11 +188,11 @@ namespace CheckTikZDiagram
                     {
                         if (i % 2 == 0)
                         {
-                            yield return (item, sourceMath, targetMath, arrow);
+                            yield return (item, sourceMath, targetMath, GetMorphismType(arrow));
                         }
                         else
                         {
-                            yield return (item, targetMath, sourceMath, arrow);
+                            yield return (item, targetMath, sourceMath, GetMorphismType(arrow));
                         }
                     }
                 }
@@ -197,7 +200,7 @@ namespace CheckTikZDiagram
         }
 
 
-        private static IEnumerable<(MathObject, MathObject, MathObject)> CreateMainHom(string text)
+        private static IEnumerable<(MathObject, MathObject, MathObject, MorphismType)> CreateMainHom(string text)
         {
             var h = _homSet.Match(text);
             if (!h.Success)
@@ -224,7 +227,7 @@ namespace CheckTikZDiagram
 
             foreach (var item in new MathObjectFactory(h.Groups[1].Value).Create())
             {
-                yield return (item, homMain.List[0], homMain.List[1]);
+                yield return (item, homMain.List[0], homMain.List[1], MorphismType.OneMorphism);
             }
         }
 
