@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace CheckTikZDiagram
 {
@@ -14,8 +15,8 @@ namespace CheckTikZDiagram
         /// <summary>
         /// CreateMorphismのキャッシュ
         /// </summary>
-        private readonly Dictionary<(TokenString, TokenString?, TokenString?), Morphism[]> _cacheCreateMorphism
-            = new Dictionary<(TokenString, TokenString?, TokenString?), Morphism[]>();
+        private readonly Dictionary<(TokenString, TokenString?, TokenString?), IEnumerable<(Morphism, bool?)>> _cacheCreateMorphism
+            = new Dictionary<(TokenString, TokenString?, TokenString?), IEnumerable<(Morphism, bool?)>>();
 
         /// <summary>
         /// CheckNodeのキャッシュ
@@ -133,15 +134,18 @@ namespace CheckTikZDiagram
                     continue;
                 }
 
+                WriteLog("[{0}] {1}", num, arrow);
                 var list = new List<string>();
-                foreach (var def in CreateMorphism(arrow.MathObject, source.MathObject, target.MathObject))
+                foreach (var (mor, result) in CreateMorphism(arrow.MathObject, source.MathObject, target.MathObject))
                 {
-                    if (EqualsAsMathObject(def.Source, source.MathObject) && EqualsAsMathObject(def.Target, target.MathObject))
+                    WriteLog("[{0}, {1}] {2}", num, result, mor);
+                    if (result == true
+                        ||(result == null && CheckSourceAndTarget(mor, source.MathObject, target.MathObject)))
                     {
-                        yield return new CheckResult(num, $"[TikZ] {arrow.OriginalText.Trim()}: {source} → {target}\n[def ] {def}", false, !_errorOnly);
+                        yield return new CheckResult(num, $"[TikZ] {arrow.OriginalText.Trim()}: {source} → {target}\n[def ] {mor}", false, !_errorOnly);
                         goto NEXT_ARROW;
                     }
-                    list.Add($"\n    {def}");
+                    list.Add($"\n    {mor}");
                 }
 
                 if (list.Count == 0)
@@ -164,25 +168,68 @@ namespace CheckTikZDiagram
         /// <param name="source">domainを表す文字列</param>
         /// <param name="target">codomainを表す文字列</param>
         /// <returns>変換後のMorphismの候補</returns>
-        public IEnumerable<Morphism> CreateMorphism(MathObject math, MathObject? source, MathObject? target)
+        public IEnumerable<(Morphism, bool?)> CreateMorphism(MathObject math, MathObject? source, MathObject? target, [CallerMemberName] string memberName = "")
         {
+            _logCount++;
             var key = (math.ToTokenString(), source?.ToTokenString(), target?.ToTokenString());
-            
+            WriteLog("[{0} ⇒ CreateMorphism] {1}, {2}, {3}", memberName, math, source, target);
+
             // 処理本体(キャッシュに値がある場合はそれを使用する)
             if (!_cacheCreateMorphism.ContainsKey(key))
             {
-                _cacheCreateMorphism[key] = Array.Empty<Morphism>(); // 無限ループを防ぐため、一旦空配列を入れる
-                _cacheCreateMorphism[key] = CreateMorphismMain(math, source, target).ToArray();
+                _cacheCreateMorphism[key] = Array.Empty<(Morphism, bool?)>(); // 無限ループを防ぐため、一旦空配列を入れる
+                _cacheCreateMorphism[key] = CreateCache(CreateMorphismMain(math, source, target));
+            }
+            else
+            {
+                WriteLog("キャッシュ有り");
             }
 
+            _logCount--;
             return _cacheCreateMorphism[key];
+
+
+            static IEnumerable<(Morphism, bool?)> CreateCache(IEnumerable<(Morphism, bool?)> enumerable)
+            {
+                var temp = new List<(Morphism, bool?)>();
+                foreach (var (mor, result) in enumerable)
+                {
+                    if (result == true)
+                    {
+                        // trueのものがあればそれ一つのみを使用する
+                        return new[] { (mor, result) };
+                    }
+
+                    temp.Add((mor, result));
+                }
+
+                return temp;
+            }
         }
 
-
-        public IEnumerable<Morphism> CreateMorphismMain(MathObject math, MathObject? source, MathObject? target)
+        /// <summary>
+        /// メイン処理
+        /// </summary>
+        /// <param name="math"></param>
+        /// <param name="source"></param>
+        /// <param name="target"></param>
+        /// <returns>Morphism: 候補の射  bool: 与えたsource, targetと一致する射であることが確認済ならtrue</returns>
+        public IEnumerable<(Morphism, bool?)> CreateMorphismMain(MathObject math, MathObject? source, MathObject? target)
         {
             // 定義が_definedMorphismDictionaryに含まれる場合
-            if (_definedMorphismDictionary.TryGetValue(math.ToTokenString(), out var m)) yield return m;
+            if (_definedMorphismDictionary.TryGetValue(math.ToTokenString(), out var m))
+            {
+                WriteLog("DefinedMorphism");
+
+                if (source != null && target != null)
+                {
+                    yield return (m, CheckSourceAndTarget(m, source, target));
+                }
+                else
+                {
+                    yield return (m, null);
+                }
+            }
 
             // 定義が_parameterizedMorphismsに含まれる場合
             foreach (var item in Parameterized(math, source, target)) yield return item;
@@ -193,7 +240,7 @@ namespace CheckTikZDiagram
 
             // 射の合成(コマンド)の場合
             var compo = CompositeCommand(seq, source, target);
-            if (compo != null) yield return compo;
+            if (compo != null) yield return (compo, null);
 
             // SupもSubもない場合
             if (seq.Sup == null && seq.Sub == null)
@@ -231,7 +278,7 @@ namespace CheckTikZDiagram
 
             // 射の合成(二項演算)の場合
             var compo2 = CompositeOperator(seq, source, target);
-            if (compo2 != null) yield return compo2;
+            if (compo2 != null) yield return (compo2, null);
 
             // 二項演算の場合
             var bo = BinaryOperator(seq, source, target).ToArray();
@@ -239,10 +286,10 @@ namespace CheckTikZDiagram
             if (bo.Length > 0) yield break;
 
             // 関手適用の場合
-            foreach (var item in ApplyingFunctor(seq)) yield return item;
+            foreach (var item in ApplyingFunctor(seq)) yield return (item, null);
 
             // 二変数関手適用の場合
-            foreach (var item in ApplyingBifunctor(seq, source, target)) yield return item;
+            foreach (var item in ApplyingBifunctor(seq, source, target)) yield return (item, null);
         }
 
         private MathObject? RemoveBracket(MathObject? mathObject)
@@ -269,7 +316,7 @@ namespace CheckTikZDiagram
             }
         }
 
-        private IEnumerable<Morphism> Parameterized(MathObject math, MathObject? source, MathObject? target)
+        private IEnumerable<(Morphism, bool?)> Parameterized(MathObject math, MathObject? source, MathObject? target)
         {
             foreach (var def in _parameterizedMorphisms)
             {
@@ -284,7 +331,16 @@ namespace CheckTikZDiagram
                     // appliedが変数を持っていなければOK (この時点でapplied.Nameは変数無し)
                     if (!applied.Source.HasVariables() && !applied.Target.HasVariables())
                     {
-                        yield return applied;
+                        WriteLog("Parameterized0 {0}", def);
+                        if (source == null || target == null)
+                        {
+                            yield return (applied, null);
+                        }
+                        else
+                        {
+                            yield return (applied, CheckSourceAndTarget(applied, source, target));
+                        }
+
                         continue;
                     }
 
@@ -317,7 +373,7 @@ namespace CheckTikZDiagram
                         }
                     }
 
-                    // s, t
+                    // s変数、t変数
                     var array = applied.Source.GetVariables().Concat(applied.Target.GetVariables())
                         .Where(x => x.EndsWith('s') || x.EndsWith('t'))
                         .Select(x => x.Substring(0, 2))
@@ -333,8 +389,9 @@ namespace CheckTikZDiagram
                         paramDic[paramName] = value;
                     }
 
-                    foreach (var morParam in AggregateParameters(paramDic, x => CreateMorphism(x, null, null)))
+                    foreach (var morParam in AggregateParameters(paramDic, x => CreateMorphism(x, null, null).Select(y => y.Item1)))
                     {
+                        // s変数、t変数がない場合はmorParamは空の辞書
                         var stParam = new Dictionary<string, MathObject>(q);
                         var defList = new List<Morphism>();
                         foreach (var kvp in morParam)
@@ -348,7 +405,15 @@ namespace CheckTikZDiagram
                         {
                             if (!item.Source.GetVariables().Any() && !item.Target.GetVariables().Any())
                             {
-                                yield return item;
+                                WriteLog("Parameterized1 {0}", def);
+                                if (source != null && target != null)
+                                {
+                                    yield return (item, array.Length == 0 || CheckSourceAndTarget(item, source, target));
+                                }
+                                else
+                                {
+                                    yield return (item, null);
+                                }
                             }
                         }
                     }
@@ -375,47 +440,50 @@ namespace CheckTikZDiagram
             return true;
         }
 
-        private IEnumerable<Morphism> Inverse(MathSequence seq, MathObject? source, MathObject? target)
+        private IEnumerable<(Morphism, bool?)> Inverse(MathSequence seq, MathObject? source, MathObject? target)
         {
             if (seq.Sup == null || !seq.Sup.ToTokenString().Equals(Config.Instance.Inverse))
             {
                 yield break;
             }
 
-            foreach (var mor in CreateMorphism(seq.CopyWithoutSup(), target, source))
+            foreach (var (mor, result) in CreateMorphism(seq.CopyWithoutSup(), target, source))
             {
-                yield return new Morphism(seq, mor.Target, mor.Source, mor.Type, mor.GetDefList());
+                WriteLog("Inverse {0} {1}", mor, result);
+                yield return (new Morphism(seq, mor.Target, mor.Source, mor.Type, mor.GetDefList()), result);
             }
         }
 
-        private IEnumerable<Morphism> KanExtension(MathSequence math, MathObject? source, MathObject? target)
+        private IEnumerable<(Morphism, bool?)> KanExtension(MathSequence math, MathObject? source, MathObject? target)
         {
             if (math.Length != 3 || !Config.Instance.KanExtensions.Any(x => math.List[0].ToTokenString().Equals(x)))
             {
                 yield break;
             }
 
-            foreach (var f in CreateMorphism(math.List[1], null, source))
+            foreach (var (f, _) in CreateMorphism(math.List[1], null, source))
             {
-                foreach (var g in CreateMorphism(math.List[2], null, target))
+                foreach (var (g, _) in CreateMorphism(math.List[2], null, target))
                 {
-                    yield return new Morphism(math, f.Target, g.Target, f.Type, f.GetDefList().Concat(g.GetDefList()));
+                    WriteLog("KanExtension {0} {1}", f, g);
+                    yield return (new Morphism(math, f.Target, g.Target, f.Type, f.GetDefList().Concat(g.GetDefList())), null);
                 }
             }
         }
 
-        private IEnumerable<Morphism> KanLift(MathSequence math, MathObject? source, MathObject? target)
+        private IEnumerable<(Morphism, bool?)> KanLift(MathSequence math, MathObject? source, MathObject? target)
         {
             if (math.Length != 3 || !Config.Instance.KanLifts.Any(x => math.List[0].ToTokenString().Equals(x)))
             {
                 yield break;
             }
 
-            foreach (var f in CreateMorphism(math.List[1], target, null))
+            foreach (var (f, _) in CreateMorphism(math.List[1], target, null))
             {
-                foreach (var g in CreateMorphism(math.List[2], source, null))
+                foreach (var (g, _) in CreateMorphism(math.List[2], source, null))
                 {
-                    yield return new Morphism(math, g.Source, f.Source, f.Type, f.GetDefList().Concat(g.GetDefList()));
+                    WriteLog("KanLift {0} {1}", f, g);
+                    yield return (new Morphism(math, g.Source, f.Source, f.Type, f.GetDefList().Concat(g.GetDefList())), null);
                 }
             }
         }
@@ -429,6 +497,7 @@ namespace CheckTikZDiagram
                 return null;
             }
 
+            WriteLog("CompositeCommand {0}", seq);
             return Composition(math, source, target, seq.List);
         }
 
@@ -442,6 +511,7 @@ namespace CheckTikZDiagram
                     continue;
                 }
 
+                WriteLog("CompositeOperator {0}", compo);
                 return Composition(math, source, target, xs);
             }
             return null;
@@ -455,11 +525,11 @@ namespace CheckTikZDiagram
                 Morphism? mor;
                 if (i < list.Count - 1)
                 {
-                    mor = CreateMorphism(list[i], source, null).FirstOrDefault();
+                    (mor, _) = CreateMorphism(list[i], source, null).FirstOrDefault();
                 }
                 else
                 {
-                    mor = CreateMorphism(list[i], source, target).FirstOrDefault();
+                    (mor, _) = CreateMorphism(list[i], source, target).FirstOrDefault();
                 }
 
                 if (mor != null)
@@ -476,7 +546,7 @@ namespace CheckTikZDiagram
             return new Morphism(math, temp.First().Source, temp.Last().Target, MorphismType.OneMorphism, temp.SelectMany(mor => mor.GetDefList()));
         }
 
-        private IEnumerable<Morphism> WithIndex(MathSequence seq, MathObject? source, MathObject? target)
+        private IEnumerable<(Morphism, bool?)> WithIndex(MathSequence seq, MathObject? source, MathObject? target)
         {
             if (seq.Sub == null) yield break;
             
@@ -485,39 +555,50 @@ namespace CheckTikZDiagram
             var (tFunc, tValue) = GetFunctor(target, seq.Sub.ToTokenString());
 
             // main部分が自然変換(もしくは2-morphism)のものが処理対象
-            foreach (var mor in CreateMorphism(main, sFunc, tFunc).Where(x => x.Type == MorphismType.NaturalTransformation
-                                                                         || x.Type == MorphismType.TwoMorphism))
+            foreach (var (mor, result) in CreateMorphism(main, sFunc, tFunc).Where(x => x.Item1.Type == MorphismType.NaturalTransformation
+                                                                         || x.Item1.Type == MorphismType.TwoMorphism))
             {
                 // 添え字に関手がついている場合
-                foreach (var sub in CreateMorphism(seq.Sub, sValue, tValue).Where(x => x.IsFunctor))
+                foreach (var (sub, _) in CreateMorphism(seq.Sub, sValue, tValue).Where(x => x.Item1.IsFunctor))
                 {
-                    yield return new Morphism(
+                    WriteLog("CWithIndex 関手 {0}, {1}", mor, sub);
+                    yield return (new Morphism(
                             seq,
                             mor.Source.Add(sub.Source),
                             mor.Target.Add(sub.Target),
                             mor.Type,
                             mor.GetDefList().Concat(sub.GetDefList())
-                    );
+                    ), null);
                 }
 
                 // 2変数の場合
                 if (seq.Sub is MathSequence subSeq && subSeq.List.Count == 2)
                 {
-                    foreach (var f in CreateMorphism(mor.Source, null, null).Where(x => x.Type == MorphismType.Bifunctor))
+                    foreach (var (f, _) in CreateMorphism(mor.Source, null, null).Where(x => x.Item1.Type == MorphismType.Bifunctor))
                     {
-                        yield return new Morphism(
+                        WriteLog("CWithIndex 2変数関手 {0}, {1}", mor, f);
+                        yield return (new Morphism(
                             seq,
                             EvaluateBifunctor(mor.Source, subSeq.List[0], subSeq.List[1]),
                             EvaluateBifunctor(mor.Target, subSeq.List[0], subSeq.List[1]),
                             MorphismType.OneMorphism,
                             mor.GetDefList().Concat(f.GetDefList())
-                        );
+                        ), null);
                     }
                 }
 
                 // それ以外の場合
-                yield return new Morphism(seq, Evaluate(mor.Source, sValue, seq.Sub), Evaluate(mor.Target, tValue, seq.Sub), MorphismType.OneMorphism,
-                    mor.GetDefList());
+                WriteLog("CWithIndex それ以外 {0}", mor);
+                if (sValue != null && tValue != null)
+                {
+                    yield return (new Morphism(seq, Evaluate(mor.Source, sValue, seq.Sub), Evaluate(mor.Target, tValue, seq.Sub), MorphismType.OneMorphism,
+                        mor.GetDefList()), result);
+                }
+                else
+                {
+                    yield return (new Morphism(seq, Evaluate(mor.Source, sValue, seq.Sub), Evaluate(mor.Target, tValue, seq.Sub), MorphismType.OneMorphism,
+                        mor.GetDefList()), null);
+                }
             }
 
             static (MathObject?, MathObject?) GetFunctor(MathObject? math, TokenString script)
@@ -547,15 +628,16 @@ namespace CheckTikZDiagram
             for (int i = 1; i < seq.List.Count; i++)
             {
                 // 先頭の i 個が関手となっている場合処理
-                foreach (var func in CreateMorphism(seq.SubSequence(0, i), null, null)
-                    .Where(x => x.Type == MorphismType.Functor || x.Type == MorphismType.ContravariantFunctor))
+                foreach (var (func, _) in CreateMorphism(seq.SubSequence(0, i), null, null)
+                    .Where(x => x.Item1.Type == MorphismType.Functor || x.Item1.Type == MorphismType.ContravariantFunctor))
                 {
                     // 後ろの残りの部分が関手に適用する値
-                    foreach (var value in CreateMorphism(seq.SubSequence(i), null, null))
+                    foreach (var (value, _) in CreateMorphism(seq.SubSequence(i), null, null))
                     {
                         // 自然変換(2-mophism)の場合、水平合成する
                         if (value.Type == MorphismType.NaturalTransformation || value.Type == MorphismType.TwoMorphism)
                         {
+                            WriteLog("ApplyingFunctor 水平合成 {0}, {1}", func, value);
                             yield return new Morphism(
                                 seq,
                                 new MathSequence(new[] { func.Name, value.Source }),
@@ -570,6 +652,7 @@ namespace CheckTikZDiagram
                             // 共変関手
                             if (func.Type == MorphismType.Functor)
                             {
+                                WriteLog("ApplyingFunctor 共変関手 {0}, {1}", func, value);
                                 yield return new Morphism(
                                     seq,
                                     Evaluate(func.Name, null, value.Source),
@@ -581,6 +664,7 @@ namespace CheckTikZDiagram
                             // 反変関手
                             else
                             {
+                                WriteLog("ApplyingFunctor 反変関手 {0}, {1}", func, value);
                                 yield return new Morphism(
                                     seq,
                                     Evaluate(func.Name, null, value.Target),
@@ -609,7 +693,7 @@ namespace CheckTikZDiagram
                     continue;
                 }
 
-                foreach (var value in CreateMorphism(parameters["-"], null, null))
+                foreach (var (value, _) in CreateMorphism(parameters["-"], null, null))
                 {
                     var sourceParam = new Dictionary<string, MathObject>() { { "-", value.Source } };
                     var targetParam = new Dictionary<string, MathObject>() { { "-", value.Target } };
@@ -620,10 +704,12 @@ namespace CheckTikZDiagram
                         {
                             if (mor.Type == MorphismType.Functor)
                             {
+                                WriteLog("ApplyingFunctor defined 共変関手 {0}, {1}", mor, value);
                                 yield return new Morphism(seq, source, target, MorphismType.OneMorphism, mor.GetDefList().Concat(value.GetDefList()));
                             }
                             else
                             {
+                                WriteLog("ApplyingFunctor defined 反変関手 {0}, {1}", mor, value);
                                 yield return new Morphism(seq, target, source, MorphismType.OneMorphism, mor.GetDefList().Concat(value.GetDefList()));
                             }
                         }
@@ -684,15 +770,16 @@ namespace CheckTikZDiagram
 
             if (seq.List[1] is MathSequence value && value.List.Count == 2)
             {
-                foreach (var mor in CreateMorphism(seq.List[0], null, null).Where(x => x.Type == MorphismType.Bifunctor))
+                foreach (var (mor, _) in CreateMorphism(seq.List[0], null, null).Where(x => x.Item1.Type == MorphismType.Bifunctor))
                 {
-                    var lArray = CreateMorphism(value.List[0], sLeft, tLeft).ToArray();
-                    var rArray = CreateMorphism(value.List[1], sRight, tRight).ToArray();
+                    var lArray = CreateMorphism(value.List[0], sLeft, tLeft).Select(x => x.Item1).ToArray();
+                    var rArray = CreateMorphism(value.List[1], sRight, tRight).Select(x => x.Item1).ToArray();
 
                     foreach (var left in lArray)
                     foreach (var right in rArray)
-                    {
-                        yield return new Morphism(
+                        {
+                            WriteLog("ApplyingBifunctor");
+                            yield return new Morphism(
                             seq,
                             EvaluateBifunctor(mor.Name, left.Source, right.Source),
                             EvaluateBifunctor(mor.Name, left.Target, right.Target),
@@ -705,6 +792,7 @@ namespace CheckTikZDiagram
                     {
                         foreach (var left in lArray)
                         {
+                            WriteLog("ApplyingBifunctor");
                             yield return new Morphism(
                                 seq,
                                 EvaluateBifunctor(mor.Name, left.Source, sRight),
@@ -719,6 +807,7 @@ namespace CheckTikZDiagram
                     {
                         foreach (var right in rArray)
                         {
+                            WriteLog("ApplyingBifunctor");
                             yield return new Morphism(
                                 seq,
                                 EvaluateBifunctor(mor.Name, sLeft, right.Source),
@@ -732,7 +821,7 @@ namespace CheckTikZDiagram
             }
         }
 
-        private IEnumerable<Morphism> BinaryOperator(MathSequence seq, MathObject? source, MathObject? target)
+        private IEnumerable<(Morphism, bool?)> BinaryOperator(MathSequence seq, MathObject? source, MathObject? target)
         {
             var mList = new List<(MathObject left, MathObject center, MathObject right)>();
             var sList = new List<(MathObject left, MathObject center, MathObject right)?>();
@@ -762,6 +851,7 @@ namespace CheckTikZDiagram
                     {
                         foreach (var item in BinaryOperatorHelper(seq, source, target, m.left, m.right, sLeft, sRight, tLeft, tRight, null))
                         {
+                            WriteLog("BinaryOperator {0} ⇒ {1}", m, item);
                             yield return item;
                         }
                     }
@@ -770,11 +860,11 @@ namespace CheckTikZDiagram
                 }
             }
 
-            if (sList.Count == 0 && !flag)
+            if (source == null && !flag)
             {
                 sList.Add(null);
             }
-            if (tList.Count == 0 && !flag)
+            if (target == null && !flag)
             {
                 tList.Add(null);
             }
@@ -810,6 +900,7 @@ namespace CheckTikZDiagram
 
                 foreach (var item in BinaryOperatorHelper(seq, source, target, m.left, m.right, s?.left, s?.right, t?.left, t?.right, op))
                 {
+                    WriteLog("BinaryOperator {0} | {1} | {2} ⇒ {3}", m, s, t, item);
                     yield return item;
                 }
             }
@@ -850,7 +941,7 @@ namespace CheckTikZDiagram
             }
         }
 
-        private IEnumerable<Morphism> BinaryOperatorHelper(MathSequence seq, MathObject? source, MathObject? target
+        private IEnumerable<(Morphism, bool?)> BinaryOperatorHelper(MathSequence seq, MathObject? source, MathObject? target
             , MathObject mLeft, MathObject mRight, MathObject? sLeft, MathObject? sRight, MathObject? tLeft, MathObject? tRight, MathObject? op)
         {
             var leftArray = CreateMorphism(mLeft, sLeft, tLeft).ToArray();
@@ -859,26 +950,41 @@ namespace CheckTikZDiagram
             var srBracket = HasParenthesisOnly(sRight, source?.ToString().Last());
             var tlBracket = HasParenthesisOnly(tLeft, target?.ToString().First());
             var trBracket = HasParenthesisOnly(tRight, target?.ToString().Last());
+            var bracket = slBracket != null && srBracket != null && tlBracket != null && trBracket != null;
 
-            foreach (var left in leftArray)
-            foreach (var right in rightArray)
+            foreach (var (left, lResult) in leftArray)
+            foreach (var (right, rResult) in rightArray)
             foreach (var item in Generate(seq, left.Source, right.Source, left.Target, right.Target,
                 op, left.Type, left.GetDefList().Concat(right.GetDefList()),
                 slBracket, srBracket, tlBracket, trBracket))
             {
-                yield return item;
+                if (lResult != null && rResult != null && bracket)
+                {
+                    yield return (item, lResult.Value && rResult.Value);
+                }
+                else
+                {
+                    yield return (item, null);
+                }
             }
 
             if ((sRight == null || EqualsAsMathObject(sRight, mRight))
                 && (tRight == null || EqualsAsMathObject(tRight, mRight)))
             {
-                foreach (var left in leftArray)
+                foreach (var (left, lResult) in leftArray)
                 {
                     foreach (var item in Generate(seq, left.Source, mRight, left.Target, mRight,
                         op, left.Type, left.GetDefList(),
                         slBracket, srBracket, tlBracket, trBracket))
                     {
-                        yield return item;
+                        if (lResult != null && bracket)
+                        {
+                            yield return (item, lResult.Value);
+                        }
+                        else
+                        {
+                            yield return (item, null);
+                        }
                     }
                 }
             }
@@ -886,13 +992,20 @@ namespace CheckTikZDiagram
             if ((sLeft == null || EqualsAsMathObject(sLeft, mLeft))
                 && (tLeft == null || EqualsAsMathObject(tLeft, mLeft)))
             {
-                foreach (var right in rightArray)
+                foreach (var (right, rResult) in rightArray)
                 {
                     foreach (var item in Generate(seq, mLeft, right.Source, mLeft, right.Target,
                         op, right.Type, right.GetDefList(),
                         slBracket, srBracket, tlBracket, trBracket))
                     {
-                        yield return item;
+                        if (rResult != null && bracket)
+                        {
+                            yield return (item, rResult.Value);
+                        }
+                        else
+                        {
+                            yield return (item, null);
+                        }
                     }
                 }
             }
@@ -962,10 +1075,17 @@ namespace CheckTikZDiagram
             return flag ? m.SetBracket() : m;
         }
 
-
-        public bool EqualsAsMathObject(MathObject left, MathObject right)
+        private bool CheckSourceAndTarget(Morphism morphism, MathObject source, MathObject target, [CallerMemberName] string memberName = "")
         {
+            return EqualsAsMathObject(morphism.Source, source, memberName) && EqualsAsMathObject(morphism.Target, target, memberName);
+        }
+
+
+        public bool EqualsAsMathObject(MathObject left, MathObject right, [CallerMemberName] string memberName = "")
+        {
+            _logCount++;
             var key = (left.ToTokenString(), right.ToTokenString());
+            WriteLog("[{0} ⇒ EqualsAsMathObject] {1}, {2}", memberName, left, right);
 
             // 処理本体(キャッシュに値がある場合はそれを使用する)
             if (!_cacheCheckNode.ContainsKey(key))
@@ -973,6 +1093,7 @@ namespace CheckTikZDiagram
                 _cacheCheckNode[key] = EqualsAsMathObjectMain(left, right);
             }
 
+            _logCount--;
             return _cacheCheckNode[key];
 
 
@@ -1007,8 +1128,8 @@ namespace CheckTikZDiagram
 
                 if (seq.List.Count > 1)
                 {
-                    foreach (var mor in CreateMorphism(seq.List[0], null, null)
-                        .Where(x => x.Type == MorphismType.Functor || x.Type == MorphismType.ContravariantFunctor))
+                    foreach (var (mor, _) in CreateMorphism(seq.List[0], null, null)
+                        .Where(x => x.Item1.Type == MorphismType.Functor || x.Item1.Type == MorphismType.ContravariantFunctor))
                     {
                         foreach (var value in EvaluateFunctor(seq.SubSequence(1)))
                         {
@@ -1095,6 +1216,109 @@ namespace CheckTikZDiagram
             }
 
             return result;
+        }
+
+        private int _logCount = 0;
+
+
+        private void WriteLog(string format, int line, TikZArrow arrow)
+        {
+#if DEBUG
+            if (!Config.Instance.OutputLogFilePath.IsNullOrEmpty())
+            {
+                WriteLog(string.Format(format, line.ToString(), arrow.ToString()));
+            }
+#endif
+        }
+
+        private void WriteLog(string format, string memberName, MathObject math, MathObject? source, MathObject? target)
+        {
+#if DEBUG
+            if (!Config.Instance.OutputLogFilePath.IsNullOrEmpty())
+            {
+                WriteLog(string.Format(format, memberName, math.ToString(), source?.ToString() ?? "null", target?.ToString() ?? "null"));
+            }
+#endif
+        }
+
+        private void WriteLog<T1, T2, T3, T4>(string format, T1 obj1, T2? obj2, T3? obj3, T4 obj4) where T1 : struct where T2 : struct where T3 : struct where T4 : struct
+        {
+#if DEBUG
+            if (!Config.Instance.OutputLogFilePath.IsNullOrEmpty())
+            {
+                WriteLog(string.Format(format, obj1.ToString(), obj2?.ToString() ?? "null", obj3?.ToString() ?? "null", obj4.ToString()));
+            }
+#endif
+        }
+
+        private void WriteLog<T>(string format, T obj) where T : notnull
+        {
+#if DEBUG
+            if (!Config.Instance.OutputLogFilePath.IsNullOrEmpty())
+            {
+                WriteLog(string.Format(format, obj.ToString()));
+            }
+#endif
+        }
+
+        private void WriteLog<T1, T2>(string format, T1 mor, T2 result) where T1 : notnull where T2 : notnull
+        {
+#if DEBUG
+            if (!Config.Instance.OutputLogFilePath.IsNullOrEmpty())
+            {
+                WriteLog(string.Format(format, mor.ToString(), result.ToString()));
+            }
+#endif
+        }
+
+        private void WriteLog<T1, T2>(string format, T1 mor, T2? result) where T1 : notnull where T2 : struct
+        {
+#if DEBUG
+            if (!Config.Instance.OutputLogFilePath.IsNullOrEmpty())
+            {
+                WriteLog(string.Format(format, mor.ToString(), result?.ToString() ?? "null"));
+            }
+#endif
+        }
+
+        private void WriteLog<T1, T2, T3>(string format, T1 obj1, T2 obj2, T3 obj3) where T1 : notnull where T2 : notnull where T3 : notnull
+        {
+#if DEBUG
+            if (!Config.Instance.OutputLogFilePath.IsNullOrEmpty())
+            {
+                WriteLog(string.Format(format, obj1.ToString(), obj2.ToString(), obj3.ToString()));
+            }
+#endif
+        }
+
+        private void WriteLog<T1, T2, T3>(string format, T1 obj1, T2? obj2, T3 obj3) where T1 : notnull where T2 : struct where T3 : notnull
+        {
+#if DEBUG
+            if (!Config.Instance.OutputLogFilePath.IsNullOrEmpty())
+            {
+                WriteLog(string.Format(format, obj1.ToString(), obj2?.ToString() ?? "null", obj3.ToString()));
+            }
+#endif
+        }
+
+        private void WriteLog<T1, T2, T3, T4>(string format, T1 obj1, T2 obj2, T3 obj3, T4 obj4) where T1 : notnull where T2 : notnull where T3 : notnull where T4 : notnull
+        {
+#if DEBUG
+            if (!Config.Instance.OutputLogFilePath.IsNullOrEmpty())
+            {
+                WriteLog(string.Format(format, obj1.ToString(), obj2.ToString(), obj3.ToString(), obj4.ToString()));
+            }
+#endif
+        }
+
+        private void WriteLog(string text)
+        {
+#if DEBUG
+            if (!Config.Instance.OutputLogFilePath.IsNullOrEmpty())
+            {
+                System.IO.File.AppendAllText(Config.Instance.OutputLogFilePath, new string('\t', _logCount) + text + "\r\n");
+            }
+#endif
         }
     }
 }

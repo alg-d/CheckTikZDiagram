@@ -53,6 +53,7 @@ namespace CheckTikZDiagram
 
         public string MorphismRegex { get; set; } = "";
 
+        public string OutputLogFilePath { get; set; } = "";
 
         public Config()
         {

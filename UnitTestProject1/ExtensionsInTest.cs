@@ -18,6 +18,49 @@ namespace UnitTestProject1
             m.Type.Is(type);
         }
 
+        public static void TestMorphism(this IEnumerable<(Morphism, bool?)> morphisms,
+            string name, string source, string target, MorphismType type, bool? result = null)
+        {
+            Console.WriteLine($"TEST {name}: {source} → {target}");
+            var array = morphisms.Select(m =>
+            {
+                Console.WriteLine(m.ToString());
+                return m;
+            }).ToArray();
+
+            if (result == true)
+            {
+                array.Length.Is(1);
+                array[0].Item2.Value.IsTrue();
+                var m = array[0].Item1;
+                m.Name.ToTokenString().TestString(name);
+                m.Source.ToTokenString().TestString(source);
+                m.Target.ToTokenString().TestString(target);
+                m.Type.Is(type);
+            }
+            else
+            {
+                if (array.Length == 1)
+                {
+                    array[0].Item2.Is(result);
+                    var m = array[0].Item1;
+                    m.Name.ToTokenString().TestString(name);
+                    m.Source.ToTokenString().TestString(source);
+                    m.Target.ToTokenString().TestString(target);
+                    m.Type.Is(type);
+                }
+                else
+                {
+                    array.Any(m => m.Item1.Name.ToTokenString().Equals(name)
+                                && m.Item1.Source.ToTokenString().Equals(source)
+                                && m.Item1.Target.ToTokenString().Equals(target)
+                                && m.Item1.Type.Equals(type)
+                                && m.Item2 == result
+                    ).IsTrue($"array.Length == {array.Length}");
+                }
+            }
+        }
+
         public static void TestMorphism(this IEnumerable<Morphism> morphisms, string name, string source, string target, MorphismType type)
         {
             var array = morphisms.Select(m =>
@@ -116,13 +159,23 @@ namespace UnitTestProject1
         }
 
 
-        public static IEnumerable<Morphism> CreateMorphism(this TikZDiagram tikz, string math, string source = null, string target = null)
+        public static IEnumerable<(Morphism, bool?)> CreateMorphismTest(this TikZDiagram tikz, string math, string source = null, string target = null)
         {
             return tikz.CreateMorphism(
                 new MathObjectFactory(math).CreateSingle(),
                 source == null ? null : new MathObjectFactory(source).CreateSingle(),
                 target == null ? null : new MathObjectFactory(target).CreateSingle()
             );
+        }
+
+
+        public static IEnumerable<Morphism> CreateMorphism(this TikZDiagram tikz, string math, string source = null, string target = null)
+        {
+            return tikz.CreateMorphism(
+                new MathObjectFactory(math).CreateSingle(),
+                source == null ? null : new MathObjectFactory(source).CreateSingle(),
+                target == null ? null : new MathObjectFactory(target).CreateSingle()
+            ).Select(x => x.Item1);
         }
 
         public static List<Morphism> CreateDefaultMorphisms()
