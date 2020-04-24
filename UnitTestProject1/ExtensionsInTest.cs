@@ -159,23 +159,13 @@ namespace UnitTestProject1
         }
 
 
-        public static IEnumerable<(Morphism, bool?)> CreateMorphismTest(this TikZDiagram tikz, string math, string source = null, string target = null)
+        public static IEnumerable<(Morphism, bool?)> CreateMorphism(this TikZDiagram tikz, string math, string source = null, string target = null)
         {
             return tikz.CreateMorphism(
                 new MathObjectFactory(math).CreateSingle(),
                 source == null ? null : new MathObjectFactory(source).CreateSingle(),
                 target == null ? null : new MathObjectFactory(target).CreateSingle()
             );
-        }
-
-
-        public static IEnumerable<Morphism> CreateMorphism(this TikZDiagram tikz, string math, string source = null, string target = null)
-        {
-            return tikz.CreateMorphism(
-                new MathObjectFactory(math).CreateSingle(),
-                source == null ? null : new MathObjectFactory(source).CreateSingle(),
-                target == null ? null : new MathObjectFactory(target).CreateSingle()
-            ).Select(x => x.Item1);
         }
 
         public static List<Morphism> CreateDefaultMorphisms()

@@ -341,8 +341,9 @@ node
 \node (C) at (0, 0) {$\cat{C}$}; \node (M) at (1.6, 0) {$\cat{U}$}; \node (V) at (3.3, 0) {$\cat{V}$};
 \draw[->] (C) to node {$\scriptstyle F$} (D);
 \draw[->] (C) to node[swap] {$\scriptstyle E$} (M);
-\draw[->] (D) to node[transform canvas={xshift=-6pt}] {$\scriptstyle K\circ (\Lan{F}E)$} (V);
 \draw[->] (M) to node[swap] {$\scriptstyle K$} (V);
+\draw[->] (D) to node[transform canvas={xshift=-6pt}] {$\scriptstyle K\circ (\Lan{F}E)$} (V);
+\draw[->] (D) to node[transform canvas={xshift=-6pt}] {$\scriptstyle \Lan{F}(K\circ E)$} (V);
 \end{tikzpicture
 ";
 
@@ -384,12 +385,14 @@ node
         public void CheckKanリフト2()
         {
             var tex = @"
+\node (V) at (0, 2) {$\cat{V}$};
 \node (D) at (0, 1) {$\cat{D}$};
-\node (C) at (0, 0) {$\cat{C}$}; \node (M) at (1, 0) {$\cat{U}$}; \node (V) at (3, 0) {$\cat{V}$};
+\node (C) at (0, 0) {$\cat{C}$}; \node (M) at (1, 0) {$\cat{U}$};
+\draw[->] (V) to node[swap] {$\scriptstyle K$} (D);
 \draw[->] (D) to node {$\scriptstyle F$} (C);
 \draw[->] (M) to node[swap] {$\scriptstyle E$} (C);
-\draw[->] (V) to node[transform canvas={xshift=-6pt}] {$\scriptstyle (\Lift{F}E)\circ K$} (D);
-\draw[->] (V) to node[swap] {$\scriptstyle K$} (M);
+\draw[->] (M) to node[transform canvas={xshift=-6pt}] {$\scriptstyle \Lift{F\circ K}E$} (V);
+\draw[->] (M) to node[transform canvas={xshift=-6pt}] {$\scriptstyle \Lift{K}(\Lift{F}E)$} (V);
 \end{tikzpicture
 ";
 
@@ -397,7 +400,7 @@ node
             {
                 { "F".ToTokenString(), ToMorphismHelp("F", @"\cat{D}", @"\cat{C}", MorphismType.Functor) },
                 { "E".ToTokenString(), ToMorphismHelp("E", @"\cat{U}", @"\cat{C}", MorphismType.Functor) },
-                { "K".ToTokenString(), ToMorphismHelp("K", @"\cat{V}", @"\cat{U}", MorphismType.Functor) },
+                { "K".ToTokenString(), ToMorphismHelp("K", @"\cat{V}", @"\cat{D}", MorphismType.Functor) },
             };
             CreateTikZDiagram(tex, dic)
                 .CheckDiagram()

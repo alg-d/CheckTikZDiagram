@@ -1016,7 +1016,7 @@ namespace UnitTestProject1
         [DataTestMethod]
         [DataRow(true)]
         [DataRow(false)]
-        public void SetParameters_トークン1(bool setNull)
+        public void ApplyParameters_トークン1(bool setNull)
         {
             var def = new MathObjectFactory(@"#1").Create().TestSingle();
 
@@ -1028,12 +1028,7 @@ namespace UnitTestProject1
                 .Where(x => x.ToTokenString().Equals("a"))
                 .ToArray();
             list.Length.Is(1);
-            foreach (var item in list)
-            {
-                if (!item.ToTokenString().Equals("a")) continue;
-
-                item.IsMathToken("a");
-            }
+            list[0].IsMathToken("a");
 
 
             parameters = new Dictionary<string, MathObject>()
@@ -1044,18 +1039,13 @@ namespace UnitTestProject1
                 .Where(x => x.ToTokenString().Equals(@"\test"))
                 .ToArray();
             list.Length.Is(1);
-            foreach (var item in list)
-            {
-                if (!item.ToTokenString().Equals(@"\test")) continue;
-
-                item.IsMathToken(@"\test");
-            }
+            list[0].IsMathToken(@"\test");
         }
 
         [DataTestMethod]
         [DataRow(true)]
         [DataRow(false)]
-        public void SetParameters_トークン2(bool setNull)
+        public void ApplyParameters_トークン2(bool setNull)
         {
             var def = new MathObjectFactory(@"#1").Create().TestSingle();
 
@@ -1063,45 +1053,35 @@ namespace UnitTestProject1
             {
                 { "#1", new MathObjectFactory("abc").CreateSingle() },
             };
-            var list = def.ApplyParameters(parameters, setNull)
-                .Where(x => x.ToTokenString().Equals("abc"))
-                .ToArray();
+            var list = def.ApplyParameters(parameters, setNull).ToArray();
             list.Length.Is(1);
-            foreach (var item in list)
-            {
-                var math = (MathSequence)item;
-                math.List.Count.Is(3);
-                math.List[0].IsMathToken(@"a");
-                math.List[1].IsMathToken(@"b");
-                math.List[2].IsMathToken(@"c");
-                math.Main.TestString(@"abc");
-                math.ToTokenString().TestString("abc");
-            }
+            var math = (MathSequence)list[0];
+            math.List.Count.Is(3);
+            math.List[0].IsMathToken(@"a");
+            math.List[1].IsMathToken(@"b");
+            math.List[2].IsMathToken(@"c");
+            math.Main.TestString(@"abc");
+            math.ToTokenString().TestString("abc");
 
             parameters = new Dictionary<string, MathObject>()
             {
                 { "#1", new MathObjectFactory(@"\theta_a").CreateSingle() },
             };
-            list = def.ApplyParameters(parameters, setNull)
-                .Where(x => x.ToTokenString().Equals(@"\theta_a"))
-                .ToArray();
+            list = def.ApplyParameters(parameters, setNull).ToArray();
             list.Length.Is(1);
-            foreach (var item in list)
-            {
-                var math = (MathSequence)item;
-                math.List.Count.Is(1);
-                math.List[0].IsMathToken(@"\theta");
-                math.Main.TestString(@"\theta");
-                math.Sup.IsNull();
-                math.Sub.IsMathToken("a");
-                math.ToTokenString().TestString(@"\theta_a");
-            }
+            math = (MathSequence)list[0];
+            math.List.Count.Is(1);
+            math.List[0].IsMathToken(@"\theta");
+            math.Main.TestString(@"\theta");
+            math.Sup.IsNull();
+            math.Sub.IsMathToken("a");
+            math.ToTokenString().TestString(@"\theta_a");
         }
 
         [DataTestMethod]
         [DataRow(true)]
         [DataRow(false)]
-        public void SetParameters_通常(bool setNull)
+        public void ApplyParameters_通常(bool setNull)
         {
             var def = new MathObjectFactory(@"#1#2#3").Create().TestSingle();
 
@@ -1111,18 +1091,28 @@ namespace UnitTestProject1
                 { "#2", new MathObjectFactory("def").CreateSingle() },
                 { "#3", new MathObjectFactory("ghi").CreateSingle() },
             };
-            var list = def.ApplyParameters(parameters, setNull)
-                .Where(x => x.ToTokenString().Equals(@"abcdefghi"))
-                .ToArray();
-            list.Length.Is(1);
+            var list = def.ApplyParameters(parameters, setNull).ToArray();
+            list.Length.Is(8);
             foreach (var item in list)
             {
-                var math = (MathSequence)item;
-                math.List.Count.Is(3);
-                math.List[0].ToTokenString().TestString("abc");
-                math.List[1].ToTokenString().TestString("def");
-                math.List[2].ToTokenString().TestString("ghi");
-                math.Main.TestString(@"abcdefghi");
+                if (item.ToTokenString().Equals(@"abcdefghi"))
+                {
+                    var math = (MathSequence)item;
+                    math.List.Count.Is(3);
+                    math.List[0].ToTokenString().TestString("abc");
+                    math.List[1].ToTokenString().TestString("def");
+                    math.List[2].ToTokenString().TestString("ghi");
+                    math.Main.TestString(@"abcdefghi");
+                }
+                else if (item.ToTokenString().Equals(@"(abc)(def)(ghi)"))
+                {
+                    var math = (MathSequence)item;
+                    math.List.Count.Is(3);
+                    math.List[0].ToTokenString().TestString("(abc)");
+                    math.List[1].ToTokenString().TestString("(def)");
+                    math.List[2].ToTokenString().TestString("(ghi)");
+                    math.Main.TestString(@"(abc)(def)(ghi)");
+                }
             }
 
             parameters = new Dictionary<string, MathObject>()
@@ -1130,25 +1120,35 @@ namespace UnitTestProject1
                 { "#1", new MathObjectFactory(@"\alpha a").CreateSingle() },
                 { "#2", new MathObjectFactory(@"\beta b").CreateSingle() },
             };
-            list = def.ApplyParameters(parameters, setNull)
-                .Where(x => x.ToTokenString().Equals(@"\alpha a\beta b #3"))
-                .ToArray();
-            list.Length.Is(1);
+            list = def.ApplyParameters(parameters, setNull).ToArray();
+            list.Length.Is(4);
             foreach (var item in list)
             {
-                var math = (MathSequence)item;
-                math.List.Count.Is(3);
-                math.List[0].ToTokenString().TestString(@"\alpha a");
-                math.List[1].ToTokenString().TestString(@"\beta b");
-                math.List[2].ToTokenString().TestString(@"#3");
-                math.Main.TestString(@"\alpha a\beta b #3");
+                if (item.ToTokenString().Equals(@"\alpha a\beta b #3"))
+                {
+                    var math = (MathSequence)item;
+                    math.List.Count.Is(3);
+                    math.List[0].ToTokenString().TestString(@"\alpha a");
+                    math.List[1].ToTokenString().TestString(@"\beta b");
+                    math.List[2].ToTokenString().TestString(@"#3");
+                    math.Main.TestString(@"\alpha a\beta b #3");
+                }
+                else if (item.ToTokenString().Equals(@"(\alpha a)(\beta b) #3"))
+                {
+                    var math = (MathSequence)item;
+                    math.List.Count.Is(3);
+                    math.List[0].ToTokenString().TestString(@"(\alpha a)");
+                    math.List[1].ToTokenString().TestString(@"(\beta b)");
+                    math.List[2].ToTokenString().TestString(@"#3");
+                    math.Main.TestString(@"(\alpha a)(\beta b) #3");
+                }
             }
         }
 
         [DataTestMethod]
         [DataRow(true)]
         [DataRow(false)]
-        public void SetParameters_添え字1(bool setNull)
+        public void ApplyParameters_添え字1(bool setNull)
         {
             var def = new MathObjectFactory(@"\test^{#1}_{#2#3}").Create().TestSingleMath();
 
@@ -1158,9 +1158,7 @@ namespace UnitTestProject1
                 { "#2", new MathObjectFactory("c").CreateSingle() },
                 { "#3", new MathObjectFactory("d").CreateSingle() },
             };
-            var list = def.ApplyParameters(parameters, setNull)
-                .Where(x => x.ToTokenString().Equals(@"\test^{ab}_{cd}"))
-                .ToArray();
+            var list = def.ApplyParameters(parameters, setNull).ToArray();
             list.Length.Is(1);
             foreach (var item in list)
             {
@@ -1183,9 +1181,7 @@ namespace UnitTestProject1
                 { "#2", new MathObjectFactory("c").CreateSingle() },
                 { "#3", new MathObjectFactory("d").CreateSingle() },
             };
-            list = def.ApplyParameters(parameters, setNull)
-                .Where(x => x.ToTokenString().Equals(@"\test^{#1}_{cd}"))
-                .ToArray();
+            list = def.ApplyParameters(parameters, setNull).ToArray();
             list.Length.Is(1);
             foreach (var item in list)
             {
@@ -1203,7 +1199,7 @@ namespace UnitTestProject1
         [DataTestMethod]
         [DataRow(true)]
         [DataRow(false)]
-        public void SetParameters_添え字2(bool setNull)
+        public void ApplyParameters_添え字2(bool setNull)
         {
             var def = new MathObjectFactory(@"\test^{#1}_{#2#3}").Create().TestSingleMath();
 
@@ -1257,7 +1253,7 @@ namespace UnitTestProject1
             }
         }
         [TestMethod]
-        public void SetParameters_ハテナ1()
+        public void ApplyParameters_ハテナ1()
         {
             var def = new MathObjectFactory(@"#1?").Create().TestSingle();
             def.IsMathToken("#1?");
@@ -1276,7 +1272,7 @@ namespace UnitTestProject1
         [DataTestMethod]
         [DataRow(true)]
         [DataRow(false)]
-        public void SetParameters_ハテナ2(bool setNull)
+        public void ApplyParameters_ハテナ2(bool setNull)
         {
             var def = new MathObjectFactory(@"\test^{#1?}_{#2?#3?}").Create().TestSingleMath();
 
@@ -1346,7 +1342,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void SetParameters_ハテナ3()
+        public void ApplyParameters_ハテナ3()
         {
             var def = new MathObjectFactory(@"\test^{#1?}_{#2?#3?}").Create().TestSingleMath();
 
@@ -1392,7 +1388,7 @@ namespace UnitTestProject1
         [DataTestMethod]
         [DataRow(true)]
         [DataRow(false)]
-        public void SetParameters_カンマ(bool setNull)
+        public void ApplyParameters_カンマ(bool setNull)
         {
             var def = new MathObjectFactory(@"\test{#1, #2}").Create().TestSingleMath();
 
@@ -1451,7 +1447,7 @@ namespace UnitTestProject1
         [DataTestMethod]
         [DataRow(@"\test^{#1?^{#2}}")]
         [DataRow(@"\test^{#1?^{#2?}}")]
-        public void SetParameters_添え字二重1(string text)
+        public void ApplyParameters_添え字二重1(string text)
         {
             var def = new MathObjectFactory(text).Create().TestSingleMath();
 
@@ -1539,7 +1535,7 @@ namespace UnitTestProject1
 
 
         [TestMethod]
-        public void SetParameters_添え字二重2()
+        public void ApplyParameters_添え字二重2()
         {
             var def = new MathObjectFactory(@"\test^{#1^{#2?}}").Create().TestSingleMath();
 
