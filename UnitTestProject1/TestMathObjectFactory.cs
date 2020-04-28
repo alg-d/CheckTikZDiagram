@@ -184,6 +184,15 @@ namespace UnitTestProject1
             math.Main.TestString("a");
             math.ToTokenString().TestString(@"a^{\prime}");
 
+            math = CreateSingleSequence(@"a''");
+            math.List.Count.Is(1);
+            math.Sup.AsMathSequence().List.Count.Is(2);
+            math.Sup.AsMathSequence().List[0].IsMathToken(@"\prime");
+            math.Sup.AsMathSequence().List[1].IsMathToken(@"\prime");
+            math.Sub.IsNull();
+            math.Main.TestString("a");
+            math.ToTokenString().TestString(@"a^{\prime\prime}");
+
             math = CreateSingleSequence(@"\alpha'_{ij}");
             math.List.Count.Is(1);
             math.Sup.IsMathToken(@"\prime");
@@ -193,6 +202,19 @@ namespace UnitTestProject1
             math.Sub.AsMathSequence().ToTokenString().TestString("ij");
             math.Main.TestString(@"\alpha");
             math.ToTokenString().TestString(@"\alpha^{\prime}_{ij}");
+
+            math = CreateSingleSequence(@"\alpha'^{ij}");
+            math.List.Count.Is(1);
+            math.Sup.AsMathSequence().List.Count.Is(3);
+            math.Sup.AsMathSequence().List[0].IsMathToken(@"\prime");
+            math.Sup.AsMathSequence().List[1].IsMathToken(@"i");
+            math.Sup.AsMathSequence().List[2].IsMathToken(@"j");
+            math.Sup.AsMathSequence().Sup.IsNull();
+            math.Sup.AsMathSequence().Sub.IsNull();
+            math.Sup.AsMathSequence().ToTokenString().TestString(@"\prime ij");
+            math.Sub.IsNull();
+            math.Main.TestString(@"\alpha");
+            math.ToTokenString().TestString(@"\alpha^{\prime ij}");
         }
 
         [TestMethod]
