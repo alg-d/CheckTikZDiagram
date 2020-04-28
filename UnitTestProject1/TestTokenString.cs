@@ -43,6 +43,14 @@ namespace UnitTestProject1
                 @"\alpha \beta \gamma",
                 @" \alpha \beta \gamma "
             }, @"\alpha \beta \gamma");
+
+            TestHelper(new string[]
+            {
+                @"\alpha uv\gamma",
+                @"\alpha u v \gamma",
+                @"\alpha uv \gamma",
+                @"\alpha  u   v  \gamma",
+            }, @"\alpha u v \gamma");
         }
 
         [TestMethod]
@@ -198,6 +206,30 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
+        public void 添え字_変数()
+        {
+            TestHelper(new string[]
+            {
+                @"f^#1",
+                @"f^{#1}",
+                @"f ^#1",
+                @"f^ #1",
+                @" f ^{ #1 } ",
+            }, @"f ^ { #1 }");
+
+            TestHelper(new string[]
+            {
+                @"g_#1",
+                @"g_{#1}",
+                @"g_{ #1}",
+                @"g_{#1 }",
+                @"g _#1",
+                @"g_ #1",
+                @" g _{ #1 } ",
+            }, @"g _ { #1 }");
+        }
+
+        [TestMethod]
         public void 改行()
         {
             TestHelper(new string[]
@@ -248,6 +280,80 @@ b",
                 @"ab^{ \test^{ \prime } }",
                 @"a b^{ \test ^ { \prime } }",
             }, @"a b ^ { \test ^ { \prime } }");
+
+            TestHelper(new string[]
+            {
+                @"a'_i",
+                @"a ' _i",
+                @"a '_ i",
+                @"a ' _ i",
+                @"a^{\prime}_i",
+                @"a^{\prime}_{i}",
+                @"a ^ { \prime }_i",
+                @"a ^ { \prime } _ i",
+            }, @"a ^ { \prime } _ { i }");
+
+            TestHelper(new string[]
+            {
+                @"a''",
+                @"a' '",
+                @" a ''",
+                @" a ' ' ",
+                @"a^{\prime\prime}",
+                @"a ^ { \prime \prime }",
+            }, @"a ^ { \prime \prime }");
+        }
+
+        [TestMethod]
+        public void Prime_添え字()
+        {
+            TestHelper(new string[]
+            {
+                @"a'^ij",
+                @"a' ^ij",
+                @"a ' ^ ij",
+                @"a '^ij",
+                @"a'^{i}j",
+                @"a ' ^ { i }j",
+                @"a^{\prime i}j",
+                @"a ^ { \prime i }j",
+            }, @"a ^ { \prime i } j");
+
+            TestHelper(new string[]
+            {
+                @"a'^{ij}",
+                @"a' ^{ij}",
+                @"a ' ^ {ij}",
+                @"a '^{ij}",
+                @"a'^{ij}",
+                @"a ' ^ { i j }",
+                @"a^{\prime i j }",
+                @"a ^ { \prime i j }",
+            }, @"a ^ { \prime i j }");
+
+            TestHelper(new string[]
+            {
+                @"a'^\test\test",
+                @"a' ^\test\test",
+                @"a ' ^ \test\test",
+                @"a '^\test\test",
+                @"a'^{\test}\test",
+                @"a ' ^ { \test }\test",
+                @"a^{\prime \test}\test",
+                @"a ^ { \prime \test }\test",
+            }, @"a ^ { \prime \test } \test");
+
+            TestHelper(new string[]
+            {
+                @"a'^#1?\test",
+                @"a' ^#1?\test",
+                @"a ' ^ #1?\test",
+                @"a '^#1?\test",
+                @"a'^{#1?}\test",
+                @"a ' ^ { #1? }\test",
+                @"a^{\prime #1?}\test",
+                @"a ^ { \prime #1? }\test",
+            }, @"a ^ { \prime #1? } \test");
         }
 
         [TestMethod]
@@ -390,6 +496,10 @@ b",
         [DataRow(@"a ' b '", @"a ' b '")]
         [DataRow(@"\alpha_i'", @"\alpha_i'")]
         [DataRow(@"\beta'_i", @"\beta'_i")]
+        [DataRow(@"x ' '", @"x ' '")]
+        [DataRow(@"u'^{ab}", @"u'^{ab}")]
+        [DataRow(@"u ' ^ x", @"u ' ^ x")]
+        [DataRow(@"u '_ x", @"u '_ x")]
         public void ToOriginalString(string value, string result)
         {
             value.ToTokenString().ToOriginalString().Is(result);
@@ -459,6 +569,9 @@ b",
         [DataRow(@"\test#")]
         [DataRow(@"#1#2#3#a#4")]
         [DataRow(@"#\test")]
+        [DataRow(@"abc^#")]
+        [DataRow(@"abc_#")]
+        [DataRow(@"abc'#")]
         [ExpectedException(typeof(InvalidOperationException))]
         public void 例外(string text)
         {

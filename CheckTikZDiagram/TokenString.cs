@@ -13,7 +13,7 @@ namespace CheckTikZDiagram
     /// (1)添え字(_ ^)の部分は必ず { } で囲う
     /// (2)改行は削除する
     /// (3)空白系は無視される
-    /// (4) ' は ^ { \prime } とみなす
+    /// (4) ' は ^ { \prime } とみなす https://tex.stackexchange.com/questions/87134/
     /// (5) # の直後は数字でなければならない
     /// (5) # で終わることはできない
     /// </summary>
@@ -80,7 +80,7 @@ namespace CheckTikZDiagram
                 }
 
                 sb.Append(item);
-                pre = (item.Trim().Length > 1);
+                pre = (item.Trim().StartsWith('\\'));
             }
 
             return sb.ToString();
