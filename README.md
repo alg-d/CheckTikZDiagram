@@ -70,7 +70,7 @@ $f\colon a\rightarrow b$，$g\colon b\rightarrow c$を圏$C$の射とする．
 \begin{document}
 $F\colon \Set \rightarrow \Ab$を関手，$f\colon a\rightarrow b$，$g\colon b\rightarrow c$を写像とする．
 \[\begin{tikzpicture}[auto]
-\node (a) at (0, 0) {$a$}; \node (b) at (1, 1) {$b$}; \node (c) at (2, 0) {$c$};
+\node (a) at (0, 0) {$Fa$}; \node (b) at (1, 1) {$Fb$}; \node (c) at (2, 0) {$Fc$};
 \draw[->] (a) -- node {$\scriptstyle Ff$} (b);
 \draw[->] (b) -- node {$\scriptstyle Fg$} (c);
 \draw[->] (a) -- node[swap] {$\scriptstyle F(g\circ f)$} (c);
