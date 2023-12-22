@@ -71,9 +71,19 @@ namespace CheckTikZDiagram
             // 対象と射の情報を収集する
             for (int i = 0; i < _tikzCommands.Length; i++)
             {
+                // CheckTikZDiagramIgnoreの処理
                 if (_tikzCommands[i].EndsWith("CheckTikZDiagramIgnore"))
                 {
-                    continue;
+                    if (i == 0)
+                    {
+                        // 最初の行にある場合はtikzpicture全体を無視する
+                        yield break;
+                    }
+                    else
+                    {
+                        // それ以外はその行のみ無視する
+                        continue;
+                    }
                 }
 
                 var ys = _tikzCommands[i].Split(';');
@@ -167,7 +177,7 @@ namespace CheckTikZDiagram
         /// <param name="math">変換対象のMathObject</param>
         /// <param name="source">domainを表す文字列</param>
         /// <param name="target">codomainを表す文字列</param>
-        /// <returns>変換後のMorphismの候補</returns>
+        /// <returns>Morphism: 変換後のMorphismの候補  bool: 与えたsource, targetと一致する射であることが確認済ならtrue</returns>
         public IEnumerable<(Morphism, bool?)> CreateMorphism(MathObject math, MathObject? source, MathObject? target, [CallerMemberName] string memberName = "")
         {
             _logCount++;
@@ -208,7 +218,7 @@ namespace CheckTikZDiagram
         }
 
         /// <summary>
-        /// メイン処理
+        /// CreateMorphismのメイン処理
         /// </summary>
         /// <param name="math"></param>
         /// <param name="source"></param>
@@ -236,7 +246,6 @@ namespace CheckTikZDiagram
 
             // MathObjectでない場合はここで終わり
             if (!(math is MathSequence seq)) yield break;
-
 
             // 射の合成(コマンド)の場合
             foreach (var item in CompositeCommand(seq, source, target)) yield return item;
@@ -285,7 +294,7 @@ namespace CheckTikZDiagram
             if (bo.Length > 0) yield break;
 
             // 関手適用の場合
-            foreach (var item in ApplyingFunctor(seq)) yield return (item, null);
+            foreach (var item in ApplyingFunctorToMorphism(seq)) yield return (item, null);
 
             // 二変数関手適用の場合
             foreach (var item in ApplyingBifunctor(seq, source, target)) yield return (item, null);
@@ -631,12 +640,12 @@ namespace CheckTikZDiagram
                 WriteLog("CWithIndex それ以外 {0}", mor);
                 if (sValue != null && tValue != null)
                 {
-                    yield return (new Morphism(seq, Evaluate(mor.Source, sValue, seq.Sub), Evaluate(mor.Target, tValue, seq.Sub), MorphismType.OneMorphism,
+                    yield return (new Morphism(seq, EvaluateFunctor(mor.Source, sValue, seq.Sub), EvaluateFunctor(mor.Target, tValue, seq.Sub), MorphismType.OneMorphism,
                         mor.GetDefList()), result);
                 }
                 else
                 {
-                    yield return (new Morphism(seq, Evaluate(mor.Source, sValue, seq.Sub), Evaluate(mor.Target, tValue, seq.Sub), MorphismType.OneMorphism,
+                    yield return (new Morphism(seq, EvaluateFunctor(mor.Source, sValue, seq.Sub), EvaluateFunctor(mor.Target, tValue, seq.Sub), MorphismType.OneMorphism,
                         mor.GetDefList()), null);
                 }
             }
@@ -663,7 +672,12 @@ namespace CheckTikZDiagram
             }
         }
 
-        private IEnumerable<Morphism> ApplyingFunctor(MathSequence seq)
+        /// <summary>
+        /// 射に対して関手を適用した結果を計算する
+        /// </summary>
+        /// <param name="seq">計算対象のMathSequence</param>
+        /// <returns>計算結果の射の候補</returns>
+        private IEnumerable<Morphism> ApplyingFunctorToMorphism(MathSequence seq)
         {
             for (int i = 1; i < seq.List.Count; i++)
             {
@@ -692,11 +706,11 @@ namespace CheckTikZDiagram
                             // 共変関手
                             if (func.Type == MorphismType.Functor)
                             {
-                                WriteLog("ApplyingFunctor 共変関手 {0}, {1}", func, value);
+                                WriteLog("ApplyingFunctorToMorphism 共変関手 {0}, {1}", func, value);
                                 yield return new Morphism(
                                     seq,
-                                    Evaluate(func.Name, null, value.Source),
-                                    Evaluate(func.Name, null, value.Target),
+                                    EvaluateFunctor(func.Name, null, value.Source),
+                                    EvaluateFunctor(func.Name, null, value.Target),
                                     MorphismType.OneMorphism,
                                     func.GetDefList().Concat(value.GetDefList())
                                 );
@@ -704,11 +718,11 @@ namespace CheckTikZDiagram
                             // 反変関手
                             else
                             {
-                                WriteLog("ApplyingFunctor 反変関手 {0}, {1}", func, value);
+                                WriteLog("ApplyingFunctorToMorphism 反変関手 {0}, {1}", func, value);
                                 yield return new Morphism(
                                     seq,
-                                    Evaluate(func.Name, null, value.Target),
-                                    Evaluate(func.Name, null, value.Source),
+                                    EvaluateFunctor(func.Name, null, value.Target),
+                                    EvaluateFunctor(func.Name, null, value.Source),
                                     MorphismType.OneMorphism,
                                     func.GetDefList().Concat(value.GetDefList())
                                 );
@@ -744,12 +758,12 @@ namespace CheckTikZDiagram
                         {
                             if (mor.Type == MorphismType.Functor)
                             {
-                                WriteLog("ApplyingFunctor defined 共変関手 {0}, {1}", mor, value);
+                                WriteLog("ApplyingFunctorToMorphism defined 共変関手 {0}, {1}", mor, value);
                                 yield return new Morphism(seq, source, target, MorphismType.OneMorphism, mor.GetDefList().Concat(value.GetDefList()));
                             }
                             else
                             {
-                                WriteLog("ApplyingFunctor defined 反変関手 {0}, {1}", mor, value);
+                                WriteLog("ApplyingFunctorToMorphism defined 反変関手 {0}, {1}", mor, value);
                                 yield return new Morphism(seq, target, source, MorphismType.OneMorphism, mor.GetDefList().Concat(value.GetDefList()));
                             }
                         }
@@ -758,7 +772,14 @@ namespace CheckTikZDiagram
             }
         }
 
-        private MathSequence Evaluate(MathObject func, MathObject? value0, MathObject value1)
+        /// <summary>
+        /// 関手に対して対象を代入する(詳しい計算はしない)
+        /// </summary>
+        /// <param name="func"></param>
+        /// <param name="value0"></param>
+        /// <param name="value1"></param>
+        /// <returns>代入結果</returns>
+        private MathSequence EvaluateFunctor(MathObject func, MathObject? value0, MathObject value1)
         {
             if (func.ToString().Contains("-"))
             {
@@ -1120,7 +1141,13 @@ namespace CheckTikZDiagram
             return EqualsAsMathObject(morphism.Source, source, memberName) && EqualsAsMathObject(morphism.Target, target, memberName);
         }
 
-
+        /// <summary>
+        /// 2つのMathObjectが同じものになるか比較する
+        /// </summary>
+        /// <param name="left"></param>
+        /// <param name="right"></param>
+        /// <param name="memberName"></param>
+        /// <returns>同じならtrue</returns>
         public bool EqualsAsMathObject(MathObject left, MathObject right, [CallerMemberName] string memberName = "")
         {
             _logCount++;
@@ -1144,9 +1171,9 @@ namespace CheckTikZDiagram
                     return true;
                 }
 
-                foreach (var leftValue in EvaluateFunctor(left))
+                foreach (var leftValue in EvaluateFunctorToObject(left))
                 {
-                    foreach (var rightValue in EvaluateFunctor(right))
+                    foreach (var rightValue in EvaluateFunctorToObject(right))
                     {
                         if (leftValue.Equals(rightValue))
                         {
@@ -1159,8 +1186,12 @@ namespace CheckTikZDiagram
             }
         }
 
-
-        public IEnumerable<MathObject> EvaluateFunctor(MathObject math)
+        /// <summary>
+        /// 対象に対して関手を適用した結果を計算する
+        /// </summary>
+        /// <param name="math">計算対象のMathObject</param>
+        /// <returns>適用結果の対象の候補</returns>
+        public IEnumerable<MathObject> EvaluateFunctorToObject(MathObject math)
         {
             yield return math;
 
@@ -1168,18 +1199,21 @@ namespace CheckTikZDiagram
             {
                 if (seq.Sup == null && seq.Sub == null && seq.ExistsBracket)
                 {
+                    // 一番外側が括弧の場合、外す
                     yield return new MathSequence(seq.List, seq.Separator, seq.Main.ToOriginalString());
                 }
 
                 if (seq.List.Count > 1)
                 {
-                    foreach (var (mor, _) in CreateMorphism(seq.List[0], null, null)
-                        .Where(x => x.Item1.Type == MorphismType.Functor || x.Item1.Type == MorphismType.ContravariantFunctor))
+                    var first = seq.List[0];
+                    if (CreateMorphism(first, null, null)
+                        .Any(x => x.Item1.Type == MorphismType.Functor || x.Item1.Type == MorphismType.ContravariantFunctor))
                     {
-                        foreach (var value in EvaluateFunctor(seq.SubSequence(1)))
+                        // 先頭が関手の場合の処理
+                        foreach (var value in EvaluateFunctorToObject(seq.SubSequence(1)))
                         {
-                            yield return seq.List[0].Add(value);
-                            yield return seq.List[0].Add(value.SetBracket());
+                            yield return first.Add(value);
+                            yield return first.Add(value.SetBracket());
                         }
                     }
                 }
@@ -1202,7 +1236,7 @@ namespace CheckTikZDiagram
                 var parameters = new Dictionary<string, MathObject>();
                 if (functor.Name.IsSameType(math, parameters))
                 {
-                    foreach (var px in AggregateParameters(parameters, x => EvaluateFunctor(x)))
+                    foreach (var px in AggregateParameters(parameters, EvaluateFunctorToObject))
                     {
                         foreach (var item in functor.Evaluate(px))
                         {

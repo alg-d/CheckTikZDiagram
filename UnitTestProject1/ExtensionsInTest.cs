@@ -170,24 +170,18 @@ namespace UnitTestProject1
 
         public static List<Morphism> CreateDefaultMorphisms()
         {
-            return new List<Morphism>()
-            {
-                Morphism.Create(@"\id_{#1?}\colon #1\rightarrow #1").TestSingle(),
-                Morphism.Create(@"#1\circ -\colon \Hom_{#3?}(#2, #1s)\rightarrow \Hom_{#3?}(#2, #1t)").TestSingle(),
-                Morphism.Create(@"-\circ #1\colon \Hom_{#3?}(#1t, #2)\rightarrow \Hom_{#3?}(#1s, #2)").TestSingle(),
-                Morphism.Create(@"#1\ocmp -\colon \Hom_{#3?}(#2, #1s)\rightarrow \Hom_{#3?}(#2, #1t)").TestSingle(),
-                Morphism.Create(@"-\ocmp #1\colon \Hom_{#3?}(#1t, #2)\rightarrow \Hom_{#3?}(#1s, #2)").TestSingle(),
-                Morphism.Create(@"\yoneda_{#1?}\colon #1\rightarrow \widehat{#1}").TestSingle()
-            };
+            return Config.CreateDefaultValue()
+                .Morphisms
+                .Select(x => Morphism.Create(x).TestSingle())
+                .ToList();
         }
 
         public static IEnumerable<Functor> CreateDefaultFunctors()
         {
-            yield return Functor.Create(@"\id_{#1?}#2", "#2");
-            yield return Functor.Create(@"\Delta #1(#2)", "#1");
-            yield return Functor.Create(@"\Hom(#1, #2)", @"\Hom(#1, #2)");
-            yield return Functor.Create(@"\Hom_{\cat{C}}(#1, #2)", @"\Hom_{\cat{C}}(#1, #2)");
-            yield return Functor.Create(@"\yoneda #2 #1", @"\Hom(#1, #2)");
+            foreach (var text in Config.CreateDefaultValue().Functors)
+            {
+                yield return Functor.Create(text);
+            }
         }
     }
 }

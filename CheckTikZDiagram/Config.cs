@@ -18,7 +18,6 @@ namespace CheckTikZDiagram
         public string Inverse { get; set; } = "";
         public string Adjoint { get; set; } = "";
         public string Composite { get; set; } = "";
-        public string Diagonal { get; set; } = "";
         public string Product { get; set; } = "";
 
 
@@ -32,6 +31,8 @@ namespace CheckTikZDiagram
         public ObservableCollection<string> KanExtensions { get; set; } = new ObservableCollection<string>();
 
         public ObservableCollection<string> KanLifts { get; set; } = new ObservableCollection<string>();
+
+        public ObservableCollection<string> Limits { get; set; } = new ObservableCollection<string>();
 
         public string[] OpenBrackets { get; set; } = new[] { "(", "{", "[", "\\{", "\\langle" };
         public string[] CloseBrackets { get; set; } = new[] { ")", "}", "]", "\\}", "\\rangle" };
@@ -124,7 +125,6 @@ namespace CheckTikZDiagram
                 Inverse = "-1",
                 Adjoint = "\\dashv",
                 Composite = "\\compo",
-                Diagonal = "\\Delta",
                 Product = "\\otimes",
                 TikZNodeRegex = @"\\node\s*\((?<name>[^)]*)\).*\{\$(?<math>.*)\$\}\s*$",
                 TikZArrowRegex = @"\\draw\s*\[(?<arrow>[^\]]*)[^()]*\((?<source>[^()]*)\).*node.*\{\$(?<math>.*)\$\}.*\((?<target>[^()]*)\)\s*$",
@@ -144,6 +144,9 @@ namespace CheckTikZDiagram
 
             c.KanLifts.AddRange(new[] { "\\Lift", "\\Rift" });
 
+            c.Limits.AddRange(new[] { "\\lim", "\\colim", "\\wlim", "\\wcolim", "\\bilim", "\\bicolim", "\\wbilim", "\\wbicolim",
+                "\\pslim", "\\pscolim", "\\laxlim", "\\laxcolim" });
+
             c.Morphisms.AddRange(new[]
             {
                 @"\id_{#1?} \colon #1 \rightarrow #1",
@@ -157,7 +160,7 @@ namespace CheckTikZDiagram
             c.Functors.AddRange(new[]
             {
                 @"Functor \id_{#1?}#2, #2",
-                @"Functor \Delta #1(#2), #1",
+                @"Functor \Diagonal #1(#2), #1",
                 @"Functor \Hom(#1, #2), \Hom(#1, #2)",
                 @"Functor \Hom_{#3}(#1, #2), \Hom_{#3}(#1, #2)",
                 @"Functor \yoneda #2 #1, \Hom_{\cat{C}}(#1, #2)",

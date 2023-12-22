@@ -92,10 +92,38 @@ namespace CheckTikZDiagram
         /// 変数を持つ場合true
         /// </summary>
         /// <returns></returns>
-        public bool HasVariables() => this.ToString().Contains("#") || this.ToString().Contains("-");
+        public bool HasVariables()
+        {
+            var x = this.ToString();
+            if (x.Contains("#"))
+            {
+                // #は変数と見なす
+                return true;
+            }
+            else if (x.Contains("-"))
+            {
+                // -は、(余)極限のコマンドが含まれていない場合変数と見なす
+                foreach (var item in Config.Instance.Limits)
+                {
+                    if (x.Contains(item))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
+        }
 
         public bool Contains(string value) => this.ToString().Contains(value);
         
+        /// <summary>
+        /// otherを加えた新しいMathSequenceを返す
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
         public MathSequence Add(MathObject other)
         {
             var list = new List<MathObject>();

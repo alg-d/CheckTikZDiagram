@@ -494,6 +494,22 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
+        public void 変数4()
+        {
+            var mor = ToMorphismHelp(@"(\mu_{#1})_{#2}", @"T(#2, #1)", @"\colim T(-, #1)", MorphismType.OneMorphism);
+
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = new List<Morphism>()
+            {
+                mor,
+            };
+            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, Array.Empty<Functor>());
+
+            tikz.CreateMorphism(@"(\mu_{j_0})_{i_1}")
+                .TestMorphism(@"(\mu_{j_0})_{i_1}", @"T(i_1, j_0)", @"\colim T(-, j_0)", MorphismType.OneMorphism);
+        }
+
+        [TestMethod]
         public void 変数dom_codのみにある変数()
         {
             var mor = ToMorphismHelp(@"M^{#1#2#3}", @"\bicat{#4}(#2, #3)\times\bicat{#4}(#1, #2)", @"\bicat{#4}(#1, #3)", MorphismType.Bifunctor);

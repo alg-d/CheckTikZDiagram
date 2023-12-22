@@ -205,24 +205,24 @@ namespace UnitTestProject1
         {
             var list = new List<Functor>()
             {
-                Functor.Create(@"\Delta #1(#2)", "#1"),
+                Functor.Create(@"\Diagonal #1(#2)", "#1"),
             };
 
-            var left = new MathObjectFactory(@"\Delta a(x)").CreateSingle();
+            var left = new MathObjectFactory(@"\Diagonal a(x)").CreateSingle();
             var right = new MathObjectFactory("a").CreateSingle();
 
             CreateTikZDiagram(list)
                 .EqualsAsMathObject(left, right)
                 .IsTrue();
 
-            left = new MathObjectFactory(@"\Delta (a+b)(x)").CreateSingle();
+            left = new MathObjectFactory(@"\Diagonal (a+b)(x)").CreateSingle();
             right = new MathObjectFactory("a+b").CreateSingle();
 
             CreateTikZDiagram(list)
                 .EqualsAsMathObject(left, right)
                 .IsTrue();
 
-            left = new MathObjectFactory(@"GF(\Delta a(x))").CreateSingle();
+            left = new MathObjectFactory(@"GF(\Diagonal a(x))").CreateSingle();
             right = new MathObjectFactory("GFa").CreateSingle();
             var dic = new Dictionary<TokenString, Morphism>
             {
@@ -234,25 +234,25 @@ namespace UnitTestProject1
                 .EqualsAsMathObject(left, right)
                 .IsTrue();
 
-            left = new MathObjectFactory(@"GF(\Delta a(x))").CreateSingle();
+            left = new MathObjectFactory(@"GF(\Diagonal a(x))").CreateSingle();
             right = new MathObjectFactory("GF(a)").CreateSingle();
             new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), list)
                 .EqualsAsMathObject(left, right)
                 .IsTrue();
 
-            left = new MathObjectFactory(@"GF(\Delta a(x))").CreateSingle();
+            left = new MathObjectFactory(@"GF(\Diagonal a(x))").CreateSingle();
             right = new MathObjectFactory("G(Fa)").CreateSingle();
             new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), list)
                 .EqualsAsMathObject(left, right)
                 .IsTrue();
 
-            left = new MathObjectFactory(@"GF(\Delta a(x))").CreateSingle();
+            left = new MathObjectFactory(@"GF(\Diagonal a(x))").CreateSingle();
             right = new MathObjectFactory("G(F(a))").CreateSingle();
             new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), list)
                 .EqualsAsMathObject(left, right)
                 .IsTrue();
 
-            left = new MathObjectFactory(@"G(F(\Delta a(x)))").CreateSingle();
+            left = new MathObjectFactory(@"G(F(\Diagonal a(x)))").CreateSingle();
             right = new MathObjectFactory("GFa").CreateSingle();
             new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), list)
                 .EqualsAsMathObject(left, right)
@@ -264,7 +264,7 @@ namespace UnitTestProject1
         {
             var list = new List<Functor>()
             {
-                Functor.Create(@"\Delta #1(#2)", "#1"),
+                Functor.Create(@"\Diagonal #1(#2)", "#1"),
                 Functor.Create(@"\Hom(#1, #2)", @"\Hom(#1, #2)"),
                 Functor.Create(@"\Hom_{#3}(#1, #2)", @"\Hom_{#3}(#1, #2)"),
             };
@@ -273,14 +273,14 @@ namespace UnitTestProject1
                 { "F".ToTokenString(), new Morphism("F", @"\cat{C}", @"\cat{D}", MorphismType.Functor, -1) }
             };
 
-            var left = new MathObjectFactory(@"\Hom(\Delta(\lim T)(x), F(u))").CreateSingle();
+            var left = new MathObjectFactory(@"\Hom(\Diagonal(\lim T)(x), F(u))").CreateSingle();
             var right = new MathObjectFactory(@"\Hom(\lim T, Fu)").CreateSingle();
 
             new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), list)
                 .EqualsAsMathObject(left, right)
                 .IsTrue();
 
-            left = new MathObjectFactory(@"\Hom_{\cat{C}}(\Delta(\lim T)(x), F(u))").CreateSingle();
+            left = new MathObjectFactory(@"\Hom_{\cat{C}}(\Diagonal(\lim T)(x), F(u))").CreateSingle();
             right = new MathObjectFactory(@"\Hom_{\cat{C}}(\lim T, Fu)").CreateSingle();
             new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), list)
                 .EqualsAsMathObject(left, right)

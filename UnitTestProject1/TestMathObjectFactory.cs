@@ -479,6 +479,20 @@ namespace UnitTestProject1
             math.Main.TestString(@"\Gamma_i");
             math.ToTokenString().TestString(@"(\Gamma_i)_x");
 
+            math = CreateSingleSequence(@"(\mu_{j_0})_{i_1}");
+            math.List.Count.Is(1);
+            math.List[0].AsMathSequence().List.Count.Is(1);
+            math.List[0].AsMathSequence().List[0].IsMathToken(@"\mu");
+            math.List[0].AsMathSequence().Sup.IsNull();
+            math.List[0].AsMathSequence().Sub.Main.TestString("j");
+            math.List[0].AsMathSequence().Sub.ToTokenString().TestString("j_0");
+            math.Sup.IsNull();
+            math.Sub.ToTokenString().TestString("i_1");
+            math.LeftBracket.TestToken("(");
+            math.RightBracket.TestToken(")");
+            math.Main.TestString(@"\mu_{j_0}");
+            math.ToTokenString().TestString(@"(\mu_{j_0})_{i_1}");
+
             math = CreateSingleSequence(@"((\phi_{gf})_{\sigma})_d");
             math.List.Count.Is(1);
             math.List[0].AsMathSequence().List.Count.Is(1);

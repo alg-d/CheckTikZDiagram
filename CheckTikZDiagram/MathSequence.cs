@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace CheckTikZDiagram
 {
     /// <summary>
-    /// 一つの射or対象を表すクラス(MathObjectの非空有限列からなる)
+    /// いくつかの対象、射、関手などから作られた、一つの射or対象を表すクラス(MathObjectの非空有限列からなる)
     /// </summary>
     public class MathSequence : MathObject
     {

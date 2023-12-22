@@ -110,7 +110,7 @@ namespace CheckTikZDiagram
             });
             Progressvalue = ReadFileLine;
             var end = DateTime.Now;
-            MessageBox.Show("完了しました" + (end - start).TotalSeconds.ToString());
+            MessageBox.Show("完了しました");
         }
 
 

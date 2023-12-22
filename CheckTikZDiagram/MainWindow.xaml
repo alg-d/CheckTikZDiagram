@@ -42,7 +42,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Button      Grid.Row="0" Grid.Column="0" Content="ファイル選択" Command="{Binding OpenFileCommand}"/>
-                <CheckBox    Grid.Row="0" Grid.Column="1" Margin="5"  IsChecked="{Binding ErrorOnly}" VerticalAlignment="Center">エラーのあった行のみ表示する</CheckBox>
+                <CheckBox    Grid.Row="0" Grid.Column="1" Margin="5" IsChecked="{Binding ErrorOnly}" VerticalAlignment="Center">エラーのあった行のみ表示する</CheckBox>
                 <ProgressBar Grid.Row="0" Grid.Column="2" Margin="5" Width="250" Maximum="{Binding ReadFileLine}" Value="{Binding Progressvalue}" />
                 <Label       Grid.Row="0" Grid.Column="3" Content="エラー数 / 射の個数" />
                 <Label       Grid.Row="0" Grid.Column="4" Content="{Binding ErrorCount}" />
@@ -79,7 +79,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="50" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -115,24 +115,24 @@
                 <Label   Grid.Row="5" Grid.Column="1" Content="射の合成" />
                 <TextBox Grid.Row="5" Grid.Column="2" Text="{Binding Config.Composite}" />
 
-                <Label   Grid.Row="6" Grid.Column="1" Content="対角関手" />
-                <TextBox Grid.Row="6" Grid.Column="2" Text="{Binding Config.Diagonal}" />
-
                 <Label                     Grid.Row="1" Grid.Column="3" Content="圏とみなすTeXコマンド" />
                 <local:EditCollectionPanel Grid.Row="2" Grid.Column="3" Grid.RowSpan="8" Margin="10,0,0,0" Height="300" VerticalAlignment="Top"
                                            ItemList="{Binding Config.Categories}" />
 
                 <Label                     Grid.Row="1" Grid.Column="4" Content="Kan拡張とみなすTeXコマンド" />
-                <local:EditCollectionPanel Grid.Row="2" Grid.Column="4" Grid.RowSpan="6" Margin="10,0,0,0" ItemList="{Binding Config.KanExtensions}" />
+                <local:EditCollectionPanel Grid.Row="2" Grid.Column="4" Grid.RowSpan="5" Margin="10,0,0,0" ItemList="{Binding Config.KanExtensions}" />
 
-                <Label                     Grid.Row="8" Grid.Column="4" Content="KanリフトとみなすTeXコマンド" />
-                <local:EditCollectionPanel Grid.Row="9" Grid.Column="4" Height="160" Margin="10,0,0,0" ItemList="{Binding Config.KanLifts}" />
+                <Label                     Grid.Row="7" Grid.Column="4" Content="KanリフトとみなすTeXコマンド" />
+                <local:EditCollectionPanel Grid.Row="8" Grid.Column="4" Height="160" Margin="10,0,0,0" ItemList="{Binding Config.KanLifts}" />
 
                 <Label                     Grid.Row="1" Grid.Column="5" Content="二項演算とみなすTeXコマンド" />
-                <local:EditCollectionPanel Grid.Row="2" Grid.Column="5" Grid.RowSpan="7" Margin="10,0,0,0" ItemList="{Binding Config.Operators}" />
+                <local:EditCollectionPanel Grid.Row="2" Grid.Column="5" Grid.RowSpan="5" Margin="10,0,0,0" ItemList="{Binding Config.Operators}" />
 
-                <Label                     Grid.Row="1" Grid.Column="6" Content="射の合成(二項演算)とみなすTeXコマンド" />
-                <local:EditCollectionPanel Grid.Row="2" Grid.Column="6" Grid.RowSpan="7" Margin="10,0,0,0" ItemList="{Binding Config.Compositions}" />
+                <Label                     Grid.Row="7" Grid.Column="5" Content="射の合成(二項演算)とみなすTeXコマンド" />
+                <local:EditCollectionPanel Grid.Row="8" Grid.Column="5" Height="160" Margin="10,0,0,0" ItemList="{Binding Config.Compositions}" />
+
+                <Label                     Grid.Row="1" Grid.Column="6" Content="(余)極限とみなすTeXコマンド" />
+                <local:EditCollectionPanel Grid.Row="2" Grid.Column="6" Grid.RowSpan="5" Margin="10,0,0,0" ItemList="{Binding Config.Limits}" />
             </Grid>
         </TabItem>
         <TabItem Header="設定2">

@@ -1108,7 +1108,7 @@ node
                 { "f".ToTokenString(), new Morphism("f", @"\dom f", "k", MorphismType.OneMorphism, -1) },
                 { "T".ToTokenString(), new Morphism("T", @"\cat{J}", @"\cat{C}", MorphismType.OneMorphism, -1) },
                 { @"\id".ToTokenString(), new Morphism(@"\id", @"T(\dom f)", @"Tj", MorphismType.OneMorphism, -1) },
-                { @"\sigma".ToTokenString(), new Morphism(@"\sigma", @"T", @"\Delta a", MorphismType.NaturalTransformation, -1) }
+                { @"\sigma".ToTokenString(), new Morphism(@"\sigma", @"T", @"\Diagonal a", MorphismType.NaturalTransformation, -1) }
             };
             var list = ExtensionsInTest.CreateDefaultMorphisms();
             list.Add(ToMorphismHelp(@"\eta_{#1}", @"T#1", @"c", MorphismType.OneMorphism));
@@ -1138,7 +1138,7 @@ node
             var dic = new Dictionary<TokenString, Morphism>
             {
                 { "T".ToTokenString(), new Morphism("T", @"\cat{J}", @"\cat{C}", MorphismType.Functor, -1) },
-                { @"\pi".ToTokenString(), new Morphism(@"\pi", @"\Delta(\lim T)", "T", MorphismType.NaturalTransformation, -1) },
+                { @"\pi".ToTokenString(), new Morphism(@"\pi", @"\Diagonal(\lim T)", "T", MorphismType.NaturalTransformation, -1) },
                 { "f".ToTokenString(), new Morphism(@"f", "j", "k", MorphismType.OneMorphism, -1) }
             };
             var list = ExtensionsInTest.CreateDefaultMorphisms();

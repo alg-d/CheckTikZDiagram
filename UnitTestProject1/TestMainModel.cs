@@ -229,7 +229,7 @@ test
         }
 
         [TestMethod]
-        public void CheckTikZDiagramIgnore()
+        public void CheckTikZDiagramIgnore全体()
         {
             TestMain(@"\documentclass[uplatex,a4j,12pt,dvipdfmx]{jsarticle}
 \author{algd}
@@ -242,6 +242,36 @@ test
 ああああいいいいいい
 いいい
 test $l\colon a\rightarrow x$ああああ ああああ
+お$m\colon b\rightarrow c$い
+\[\begin{tikzpicture}[auto]  %CheckTikZDiagramIgnore
+\node (a) at (0, 1.2) {$a$}; \node (x) at (1.2, 1.2) {$x$};
+\draw[->] (a) to node {$\scriptstyle f$} (x);
+\draw[->] (a) to node {$\scriptstyle g$} (x);
+\draw[->] (a) to node {$\scriptstyle h$} (x);
+\draw[->] (a) to node {$\scriptstyle i$} (x);
+\draw[->] (a) to node {$\scriptstyle j$} (x); \draw[->] (a) to node {$\scriptstyle k$} (x);
+\draw[->] (a) to node {$\scriptstyle l$} (x);
+\draw[->] (a) to node {$\scriptstyle m$} (x);
+\end{tikzpicture}\]
+test
+\end{document}", 0);
+        }
+
+        [TestMethod]
+        public void CheckTikZDiagramIgnore単体()
+        {
+            TestMain(@"\documentclass[uplatex,a4j,12pt,dvipdfmx]{jsarticle}
+\author{algd}
+\title{ああああああああああああああああああ}
+\begin{document}
+test
+ああああ
+ああ$f\colon a\rightarrow x$ああああ ああああ
+あ$g\colon a\rightarrow x$ああ
+ああああいいいいいい
+いいい
+test $l\colon a\rightarrow x$ああああ ああああ
+お$m\colon b\rightarrow c$い
 \[\begin{tikzpicture}[auto]
 \node (a) at (0, 1.2) {$a$}; \node (x) at (1.2, 1.2) {$x$};
 \draw[->] (a) to node {$\scriptstyle f$} (x);
@@ -250,9 +280,10 @@ test $l\colon a\rightarrow x$ああああ ああああ
 \draw[->] (a) to node {$\scriptstyle i$} (x);
 \draw[->] (a) to node {$\scriptstyle j$} (x); \draw[->] (a) to node {$\scriptstyle k$} (x); %CheckTikZDiagramIgnore
 \draw[->] (a) to node {$\scriptstyle l$} (x);
+\draw[->] (a) to node {$\scriptstyle m$} (x);
 \end{tikzpicture}\]
 test
-\end{document}", 1);
+\end{document}", 2);
         }
 
         [TestMethod]
