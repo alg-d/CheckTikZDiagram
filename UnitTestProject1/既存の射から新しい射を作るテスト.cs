@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace UnitTestProject1
 {
     [TestClass]
-    public class TestTikZDiagram_Create
+    public class 既存の射から新しい射を作るテスト
     {
         [TestMethod]
         public void MorphismDef()
@@ -77,7 +77,7 @@ namespace UnitTestProject1
 
             tikz.CreateMorphism(@"\id").Count().Is(0);
 
-            tikz.CreateMorphism(@"\id", "a", "b").Count().Is(0);
+            tikz.CreateMorphism(@"\id", "a", "b").Count().Is(1);
         }
 
         [TestMethod]
@@ -218,7 +218,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphism関手適用_2変数1()
+        public void Morphism関手適用_2変数関手1()
         {
             var dic = new Dictionary<TokenString, Morphism>()
             {
@@ -245,7 +245,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphism関手適用_2変数2()
+        public void Morphism関手適用_2変数関手2()
         {
             var dic = new Dictionary<TokenString, Morphism>()
             {
@@ -350,7 +350,7 @@ namespace UnitTestProject1
                 { mor7.Name.ToTokenString(), mor7 },
                 { mor8.Name.ToTokenString(), mor8 },
             };
-            var tikz = new TikZDiagram("", -1, false, true, true, dic, ExtensionsInTest.CreateDefaultMorphisms(), ExtensionsInTest.CreateDefaultFunctors().ToList());
+            var tikz = new TikZDiagram("", -1, false, true, true, dic, ExtensionsInTest.CreateDefaultMorphisms(), ExtensionsInTest.CreateDefaultFunctors());
 
             var mor = tikz.CreateMorphism(@"f\otimes g", @"as", @"bt");
             mor.TestMorphism(@"f\otimes g", @"as", @"bt", MorphismType.OneMorphism, true);
@@ -542,7 +542,7 @@ namespace UnitTestProject1
             {
                 ToMorphismHelp(@"\ev", @"[#1a, #2]\otimes #1b", @"#2", MorphismType.OneMorphism)
             };
-            var func = ExtensionsInTest.CreateDefaultFunctors().ToList();
+            var func = ExtensionsInTest.CreateDefaultFunctors();
             func.Add(Functor.Create("F#1", "G#1"));
             func.Add(Functor.Create("X", "Y"));
             var tikz = new TikZDiagram("", -1, false, false, true, dic, list, func);
@@ -568,7 +568,7 @@ namespace UnitTestProject1
             {
                 ToMorphismHelp(@"#1_{#2#3}", @"#1s(#2, #3)", @"#1t(#1#2, #1#3)", MorphismType.OneMorphism)
             };
-            var func = ExtensionsInTest.CreateDefaultFunctors().ToList();
+            var func = ExtensionsInTest.CreateDefaultFunctors();
 
             var tikz = new TikZDiagram("", -1, false, false, true, dic, list, func);
 
@@ -809,6 +809,23 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
+        public void 変数二項演算_省略4()
+        {
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = ExtensionsInTest.CreateDefaultMorphisms();
+            list.Add(Morphism.Create(@"J\colon #1_0\rightarrow #1").TestSingle());
+
+            var tikz = new TikZDiagram("", -1, false, true, true, dic, list, Array.Empty<Functor>());
+
+            tikz.CreateMorphism(@"J\times\id", @"a_0\times b", @"a\times b")
+                .TestMorphism(@"J\times\id", @"a_0\times b", @"a\times b", MorphismType.OneMorphism, true);
+            tikz.CreateMorphism(@"J\times\id", @"\cat{A}_0\times b", @"\cat{A}\times b")
+                .TestMorphism(@"J\times\id", @"\cat{A}_0\times b", @"\cat{A}\times b", MorphismType.Functor, true);
+            tikz.CreateMorphism(@"J\times\id", @"\cat{C}'_0\times \cat{D}", @"\cat{C}'\times \cat{D}")
+                .TestMorphism(@"J\times\id", @"\cat{C}'_0\times \cat{D}", @"\cat{C}'\times \cat{D}", MorphismType.Functor, true);
+        }
+
+        [TestMethod]
         public void 変数米田()
         {
             var dic = new Dictionary<TokenString, Morphism>()
@@ -828,7 +845,7 @@ namespace UnitTestProject1
 
             tikz.CreateMorphism(@"\yoneda").Count().Is(0);
 
-            tikz.CreateMorphism(@"\yoneda", @"\cat{C}", @"\widehat{\cat{D}}").Count().Is(0);
+            tikz.CreateMorphism(@"\yoneda", @"\cat{C}", @"\widehat{\cat{D}}").Count().Is(1);
 
             tikz.CreateMorphism(@"\Lan{F}\yoneda", null, @"\widehat{\cat{C}}")
                 .TestMorphism(@"\Lan{F}\yoneda", @"\cat{D}", @"\widehat{\cat{C}}", MorphismType.Functor);
@@ -839,7 +856,7 @@ namespace UnitTestProject1
 
 
         private TikZDiagram CreateTikZDiagram(Dictionary<TokenString, Morphism> dic)
-            => new TikZDiagram("", -1, false, false, true, dic, ExtensionsInTest.CreateDefaultMorphisms(), ExtensionsInTest.CreateDefaultFunctors().ToList());
+            => new TikZDiagram("", -1, false, false, true, dic, ExtensionsInTest.CreateDefaultMorphisms(), ExtensionsInTest.CreateDefaultFunctors());
 
         private Morphism ToMorphismHelp(string name, string source, string target, MorphismType type)
             => new Morphism(name, source, target, type, -1);

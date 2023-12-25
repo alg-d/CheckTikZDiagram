@@ -170,18 +170,14 @@ namespace UnitTestProject1
 
         public static List<Morphism> CreateDefaultMorphisms()
         {
-            return Config.CreateDefaultValue()
-                .Morphisms
-                .Select(x => Morphism.Create(x).TestSingle())
+            return Config.Instance.CreateDefaultMorphisms()
                 .ToList();
         }
 
-        public static IEnumerable<Functor> CreateDefaultFunctors()
+        public static List<Functor> CreateDefaultFunctors()
         {
-            foreach (var text in Config.CreateDefaultValue().Functors)
-            {
-                yield return Functor.Create(text);
-            }
+            return Config.Instance.CreateDefaultFunctors()
+                .ToList();
         }
     }
 }

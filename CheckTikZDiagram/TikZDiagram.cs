@@ -16,13 +16,13 @@ namespace CheckTikZDiagram
         /// CreateMorphismのキャッシュ
         /// </summary>
         private readonly Dictionary<(TokenString, TokenString?, TokenString?), IEnumerable<(Morphism, bool?)>> _cacheCreateMorphism
-            = new Dictionary<(TokenString, TokenString?, TokenString?), IEnumerable<(Morphism, bool?)>>();
+            = new();
 
         /// <summary>
         /// CheckNodeのキャッシュ
         /// </summary>
         private readonly Dictionary<(TokenString, TokenString), bool> _cacheCheckNode
-            = new Dictionary<(TokenString, TokenString), bool>();
+            = new();
 
         private readonly IDictionary<TokenString, Morphism> _definedMorphismDictionary;
         private readonly ReadOnlyCollection<Morphism> _parameterizedMorphisms;
@@ -152,7 +152,9 @@ namespace CheckTikZDiagram
                     if (result == true
                         ||(result == null && CheckSourceAndTarget(mor, source.MathObject, target.MathObject)))
                     {
-                        yield return new CheckResult(num, $"[TikZ] {arrow.OriginalText.Trim()}: {source} → {target}\n[def ] {mor}", false, !_errorOnly);
+                        var m = source.NodeName.Length + 3;
+                        var n = target.NodeName.Length + 3;
+                        yield return new CheckResult(num, $"[TikZ] {arrow.OriginalText.Trim()}: {source} → {target}\n[def ] {mor.ToString(m, n)}", false, !_errorOnly);
                         goto NEXT_ARROW;
                     }
                     list.Add($"\n    {mor}");
@@ -245,7 +247,7 @@ namespace CheckTikZDiagram
             foreach (var item in Parameterized(math, source, target)) yield return item;
 
             // MathObjectでない場合はここで終わり
-            if (!(math is MathSequence seq)) yield break;
+            if (math is not MathSequence seq) yield break;
 
             // 射の合成(コマンド)の場合
             foreach (var item in CompositeCommand(seq, source, target)) yield return item;
@@ -343,26 +345,42 @@ namespace CheckTikZDiagram
                         if (source == null || target == null)
                         {
                             yield return (applied, null);
+                            continue;
                         }
                         else
                         {
                             yield return (applied, CheckSourceAndTarget(applied, source, target));
+                            continue;
                         }
-
-                        continue;
                     }
 
                     // 持っている場合、source, targetの情報を使って変数を埋める
                     var p = new Dictionary<string, MathObject>();
-                    if (source != null && !applied.Source.IsSameType(source, p)) continue;
+                    if (source != null && !applied.Source.IsSameType(source, p))
+                    {
+                        yield return (applied, false);
+                        continue;
+                    }
                     
                     var q = new Dictionary<string, MathObject>();
-                    if (target != null && !applied.Target.IsSameType(target, q)) continue;
+                    if (target != null && !applied.Target.IsSameType(target, q))
+                    {
+                        yield return (applied, false);
+                        continue;
+                    }
 
                     // p, qに矛盾がないか確認
-                    if (!CheckParameter(p)) continue;
+                    if (!CheckParameter(p))
+                    {
+                        yield return (applied, false);
+                        continue;
+                    }
 
-                    if (!CheckParameter(q)) continue;
+                    if (!CheckParameter(q))
+                    {
+                        yield return (applied, false);
+                        continue;
+                    }
 
                     foreach (var key in p.Keys.Where(x => !x.EndsWith('s') && !x.EndsWith('t')))
                     {
@@ -371,6 +389,7 @@ namespace CheckTikZDiagram
                             // pとqが矛盾している場合は無効
                             if (!EqualsAsMathObject(q[key], p[key]))
                             {
+                                yield return (applied, false);
                                 goto NEXT_APPLIED;
                             }
                         }
@@ -392,6 +411,7 @@ namespace CheckTikZDiagram
                     {
                         if (!parameters.TryGetValue(paramName, out var value))
                         {
+                            yield return (applied, false);
                             goto NEXT_APPLIED;
                         }
                         paramDic[paramName] = value;
@@ -516,7 +536,7 @@ namespace CheckTikZDiagram
         {
             if (math.Length != 2 
                 || !math.List[0].ToTokenString().Equals(Config.Instance.Composite)
-                || !(math.List[1] is MathSequence seq)
+                || math.List[1] is not MathSequence seq
                 || seq.List.Count == 1
                 || seq.Sup != null
                 || seq.Sub != null)
@@ -652,7 +672,7 @@ namespace CheckTikZDiagram
 
             static (MathObject?, MathObject?) GetFunctor(MathObject? math, TokenString script)
             {
-                if (!(math is MathSequence seq) || seq.List.Count <= 1) return (null, null);
+                if (math is not MathSequence seq || seq.List.Count <= 1) return (null, null);
 
                 var last = seq.List.Last();
                 if (last.ToTokenString().Equals(script))
@@ -1246,7 +1266,7 @@ namespace CheckTikZDiagram
                         var dic = new Dictionary<string, MathObject>();
                         foreach (var item in px)
                         {
-                            if (!(item.Value is MathSequence m) ||
+                            if (item.Value is not MathSequence m ||
                                 (m.LeftBracket.IsEmpty && m.Sup == null && m.Sub == null))
                             {
                                 dic[item.Key] = item.Value.SetBracket();

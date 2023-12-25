@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Input;
 
 namespace CheckTikZDiagram
 {
@@ -69,10 +70,9 @@ namespace CheckTikZDiagram
 
         public override bool IsSameType(MathObject other, IDictionary<string, MathObject> parameters)
         {
-            var x = this.ToString();
-
             if (this.IsVariable())
             {
+                var x = this.ToString();
                 if (x.Length == 3 && x[2] == '?')
                 {
                     return IsSameTypeMain(other, parameters, x.Substring(0, 2));

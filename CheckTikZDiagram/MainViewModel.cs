@@ -30,7 +30,7 @@ namespace CheckTikZDiagram
         public string ReadFilePath
         {
             get { return _readFilePath; }
-            set 
+            set
             {
                 SetProperty(ref _readFilePath, value);
                 RaisePropertyChanged(nameof(NotEmptyPath));
@@ -115,68 +115,38 @@ namespace CheckTikZDiagram
 
 
         private DelegateCommand? _openFileCommand;
-        public DelegateCommand OpenFileCommand
+        public DelegateCommand OpenFileCommand => _openFileCommand ??= new DelegateCommand(async () =>
         {
-            get
+            var dialog = new OpenFileDialog
             {
-                if (_openFileCommand == null)
-                {
-                    _openFileCommand = new DelegateCommand(async () =>
-                    {
-                        var dialog = new OpenFileDialog
-                        {
-                            Title = "ファイルを開く",
-                            Filter = "TeXファイル(*.tex)|*.tex"
-                        };
-                        if (dialog.ShowDialog() == true)
-                        {
-                            ReadFilePath = dialog.FileName;
-                            await ReadFile();
-                        }
-                    });
-                }
-                return _openFileCommand;
+                Title = "ファイルを開く",
+                Filter = "TeXファイル(*.tex)|*.tex"
+            };
+            if (dialog.ShowDialog() == true)
+            {
+                ReadFilePath = dialog.FileName;
+                await ReadFile();
             }
-        }
+        });
 
         private DelegateCommand? _saveCommand;
-        public DelegateCommand SaveCommand
+        public DelegateCommand SaveCommand => _saveCommand ??= new DelegateCommand(() =>
         {
-            get
+            try
             {
-                if (_saveCommand == null)
-                {
-                    _saveCommand = new DelegateCommand(() =>
-                    {
-                        try
-                        {
-                            Config.Save();
-                            MessageBox.Show("保存しました");
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show("設定の保存に失敗しました。" + ex.ToString());
-                        }
-                    });
-                }
-                return _saveCommand;
+                Config.Save();
+                MessageBox.Show("保存しました");
             }
-        }
+            catch (Exception ex)
+            {
+                MessageBox.Show("設定の保存に失敗しました。" + ex.ToString());
+            }
+        });
 
         private DelegateCommand? _reloadCommand;
-        public DelegateCommand ReloadCommand
+        public DelegateCommand ReloadCommand => _reloadCommand ??= new DelegateCommand(async () =>
         {
-            get
-            {
-                if (_reloadCommand == null)
-                {
-                    _reloadCommand = new DelegateCommand(async () =>
-                    {
-                        await ReadFile();
-                    });
-                }
-                return _reloadCommand;
-            }
-        }
+            await ReadFile();
+        });
     }
 }

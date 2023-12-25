@@ -13,18 +13,23 @@ namespace CheckTikZDiagram
     {
         private readonly TokenString _source;
 
-        private List<MathObject> _sequence = new List<MathObject>();
-        private readonly List<Token> _inBracket = new List<Token>();
-        private readonly StringBuilder _original = new StringBuilder();
+        /// <summary>
+        /// 生成時に使用する一時リスト (数式本体用)
+        /// </summary>
+        private List<MathObject> _tempMath = new();
+
+        /// <summary>
+        /// 生成時に使用する一時StringBuilder (元文字列用)
+        /// 先頭と末尾の、無視するTeXコマンドは含まない
+        /// </summary>
+        private readonly StringBuilder _tempOriginal = new();
+
+        private readonly List<Token> _inBracket = new();
         private Token _scriptToken = Token.Empty;
         private int _bracketCount;
 
         public MathObjectFactory(string text)
         {
-            foreach (var item in Config.Instance.IgnoreCommands)
-            {
-                text = text.Replace(item, "", StringComparison.Ordinal);
-            }
             _source = text.ToTokenString();
         }
 
@@ -35,8 +40,8 @@ namespace CheckTikZDiagram
 
         private void Clear()
         {
-            _sequence = new List<MathObject>();
-            _original.Clear();
+            _tempMath = new List<MathObject>();
+            _tempOriginal.Clear();
             _bracketCount = 0;
         }
 
@@ -78,32 +83,66 @@ namespace CheckTikZDiagram
         {
             Clear();
 
+            // 末尾の無視するTeXコマンドは含まない
+            var last = -1;
             for (int i = 0; i < _source.Tokens.Count; i++)
+            {
+                if (!_source.Tokens[i].IsIgnored())
+                {
+                    last = i;
+                }
+            }
+
+            for (int i = 0; i < last + 1; i++)
             {
                 var token = _source.Tokens[i];
 
+                // 無視するTeXコマンド
+                if (token.IsIgnored())
+                {
+                    // 先頭の無視するTeXコマンドは_tempOriginalにも含まない
+                    if (_tempMath.Count >= 1)
+                    {
+                        // なのでそうでない場合はAppend
+                        _tempOriginal.Append(token.Origin);
+                    }
+                    continue;
+                }
+
+                // 括弧内の処理
                 if (_bracketCount > 0)
                 {
                     BracketMode(token);
                     continue; // 括弧の中ではSeparatorの判定はしない
                 }
-                else
-                {
-                    NormalMode(token);
-                }
 
                 // Separatorの判定
                 if (token.IsSeparator())
                 {
-                    if (_sequence.Count >= 1)
+                    if (_tempMath.Count >= 1)
                     {
                         yield return ReturnMathObject();
                     }
                     Clear();
+                    continue;
                 }
+                // :=の対応
+                else if (token.Value == ":" && i < last && _source.Tokens[i + 1].Value == "=")
+                {
+                    if (_tempMath.Count >= 1)
+                    {
+                        yield return ReturnMathObject();
+                    }
+                    i++;
+                    Clear();
+                    continue;
+                }
+
+                // 通常の場合
+                NormalMode(token);
             }
 
-            if (_sequence.Count >= 1)
+            if (_tempMath.Count >= 1)
             {
                 yield return ReturnMathObject();
             }
@@ -111,13 +150,13 @@ namespace CheckTikZDiagram
 
         private MathObject ReturnMathObject()
         {
-            if (_sequence.Count == 1)
+            if (_tempMath.Count == 1)
             {
-                return _sequence[0];
+                return _tempMath[0];
             }
             else
             {
-                var math = new MathSequence(_sequence, "", _original.ToString());
+                var math = new MathSequence(_tempMath, "", _tempOriginal.ToString());
                 return math;
             }
         }
@@ -127,7 +166,7 @@ namespace CheckTikZDiagram
             // _bracketCount > 0
             if (_bracketCount == 0) throw new InvalidOperationException("_bracketCount > 0 でないのにBracketModeに来るのはおかしい");
 
-            _original.Append(token.Origin);
+            _tempOriginal.Append(token.Origin);
 
             if (token.IsOpenBracket())
             {
@@ -171,12 +210,7 @@ namespace CheckTikZDiagram
             // _bracketCount == 0
             if (_bracketCount > 0) throw new InvalidOperationException("_bracketCount == 0 でないのにNormalModeに来るのはおかしい");
 
-            if (token.IsSeparator())
-            {
-                return;
-            }
-
-            _original.Append(token.Origin);
+            _tempOriginal.Append(token.Origin);
 
             if (token.IsOpenBracket())
             {
@@ -186,7 +220,7 @@ namespace CheckTikZDiagram
             }
             else if (token.Value == "^" || token.Value == "_")
             {
-                if (_sequence.Count == 0)
+                if (_tempMath.Count == 0)
                 {
                     AddSequence(new MathObjectFactory("").CreateSingle(), Token.Empty, Token.Empty);
                 }
@@ -205,14 +239,17 @@ namespace CheckTikZDiagram
 
         private void AddSequence(MathObject mathObject, Token left, Token right)
         {
-            var last = _sequence.Count - 1;
+            var last = _tempMath.Count - 1;
             if (_scriptToken.IsEmpty)
             {
-                _sequence.Add(mathObject);
+                _tempMath.Add(mathObject);
             }
             else
             {
-                _sequence[last] = _sequence[last].SetScript(_scriptToken, left, mathObject, right);
+                if (mathObject.Length > 0)
+                {
+                    _tempMath[last] = _tempMath[last].SetScript(_scriptToken, left, mathObject, right);
+                }
                 _scriptToken = Token.Empty;
             }
         }

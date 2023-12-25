@@ -4,13 +4,16 @@ using System.Text;
 
 namespace CheckTikZDiagram
 {
+    /// <summary>
+    /// 文字列からTokenStringを生成するためのクラス
+    /// </summary>
     public class TokenStringFactory
     {
         private readonly string _sourceText;
 
-        private readonly List<Token> _tokens = new List<Token>();
-        private readonly StringBuilder _temp = new StringBuilder();
-        private readonly StringBuilder _origin = new StringBuilder();
+        private readonly List<Token> _tokens = new();
+        private readonly StringBuilder _temp = new();
+        private readonly StringBuilder _origin = new();
         private bool _texCommandFlag = false;
         private bool _texArgumentFlag = false;
         private bool _supOrSubFlag = false; // 直前が ^ または _ の場合true

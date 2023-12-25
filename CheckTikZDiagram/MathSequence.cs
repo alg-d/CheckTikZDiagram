@@ -326,6 +326,12 @@ namespace CheckTikZDiagram
             return result;
         }
 
+        public MathObject CopyWithoutScriptAndBracket()
+        {
+            var result = this.List.Count == 1 ? this.List[0] : new MathSequence(this.List, this.Separator);
+            return result;
+        }
+
         public MathObject CopyWithoutScript()
         {
             var result = this.List.Count == 1 ? this.List[0] : new MathSequence(this.List, this.Separator);
@@ -359,21 +365,83 @@ namespace CheckTikZDiagram
         {
             return other switch
             {
-                MathSequence seq => IsSameType_Sequence(seq, parameters),
-                MathToken token => IsSameType_Token(token, parameters),
+                MathSequence seq => this.List.Count == 1
+                                  ? IsSameTypeSingle(seq, parameters)
+                                  : IsSameTypeMulti(seq, parameters),
+                MathToken token => IsSameTypeToken(token, parameters),
                 _ => false,
             };
         }
 
-        private bool IsSameType_Sequence(MathSequence other, IDictionary<string, MathObject> parameters)
+        private bool IsSameTypeSingle(MathSequence other, IDictionary<string, MathObject> parameters)
+        {
+            // 変数単体(+添え字)の場合の処理
+            if (this.List[0] is MathToken token && token.HasVariables())
+            {
+                if (this.Sup != null || this.Sub != null)
+                {
+                    if (other.Sup != null || other.Sub != null || other.ExistsBracket)
+                    {
+                        // otherに添え字や括弧がある場合は、添え字と本体をそれぞれ比較
+                        return IsSameTypeScript(this.Sup, other.Sup, parameters)
+                            && IsSameTypeScript(this.Sub, other.Sub, parameters)
+                            && token.IsSameType(other.CopyWithoutScriptAndBracket(), parameters);
+                    }
+                    else
+                    {
+                        // そうでない場合は、最後の添え字と比較する
+                        if (other.List.Count > 0
+                            && other.List.Last() is MathSequence last)
+                        {
+                            var list = new List<MathObject>(other.List.Take(other.List.Count - 1));
+                            if (this.Sup == null)
+                            {
+                                list.Add(last.CopyWithoutSub());
+                                return IsSameTypeScript(this.Sub, last.Sub, parameters)
+                                    && token.IsSameType(new MathSequence(list), parameters);
+                            }
+                            else if (this.Sup == null)
+                            {
+                                list.Add(last.CopyWithoutSup());
+                                return IsSameTypeScript(this.Sup, last.Sup, parameters)
+                                    && token.IsSameType(new MathSequence(list), parameters);
+                            }
+                            else
+                            {
+                                list.Add(last.CopyWithoutScript());
+                                return IsSameTypeScript(this.Sup, last.Sup, parameters)
+                                    && IsSameTypeScript(this.Sub, last.Sub, parameters)
+                                    && token.IsSameType(new MathSequence(list), parameters);
+                            }
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+                    return token.IsSameType(other, parameters);
+                }
+            }
+
+            // そうでない場合は、添え字と本体をそれぞれ比較
+            return IsSameTypeScript(this.Sup, other.Sup, parameters)
+                && IsSameTypeScript(this.Sub, other.Sub, parameters)
+                && this.List[0].IsSameType(other.CopyWithoutScriptAndBracket(), parameters);
+        }
+
+
+        private bool IsSameTypeMulti(MathSequence other, IDictionary<string, MathObject> parameters)
         {
             // 上付き添え字についての判定
-            if (!IsSameType_Script(this.Sup, other.Sup, parameters)) return false;
+            if (!IsSameTypeScript(this.Sup, other.Sup, parameters)) return false;
 
             // 下付き添え字についての判定
-            if (!IsSameType_Script(this.Sub, other.Sub, parameters)) return false;
+            if (!IsSameTypeScript(this.Sub, other.Sub, parameters)) return false;
 
-            // 括弧のについての判定
+            // 括弧についての判定
             if (this.ExistsBracket && !RemovableBracket(this.LeftBracket, this.RightBracket))
             {
                 if (!this.LeftBracket.Equals(other.LeftBracket) || !this.RightBracket.Equals(other.RightBracket)) return false;
@@ -382,7 +450,7 @@ namespace CheckTikZDiagram
             // 本体についての判定
             if (!this.Separator.IsNullOrEmpty() && this.Separator != other.Separator) return false;
 
-            if (this.List.Count == 1 && this.List[0].IsSameType(other.CopyWithoutScript(), parameters)) return true;
+            if (this.List.Count == 1 && this.List[0].IsSameType(other.CopyWithoutScriptAndBracket(), parameters)) return true;
             
             if (this.List.Count > other.List.Count) return false;
 
@@ -414,7 +482,9 @@ namespace CheckTikZDiagram
                     }
                 }
 
-                // i番目がMathTokenでパラメーター有りの場合
+                // 以降はi番目がMathTokenでパラメーター有りの場合の処理
+
+                // i番目が最後の場合は残りと比較する
                 if (i == this.List.Count - 1)
                 {
                     return this.List[i].IsSameType(other.SubSequence(temp_j), parameters);
@@ -440,7 +510,7 @@ namespace CheckTikZDiagram
                     continue;
                 }
 
-                // そうでない場合、一致する場所を探す
+                // 次がパラメーターでない場合、「次」が一致する場所を探す
                 for (int j = temp_j + 1; j < other.List.Count; j++)
                 {
                     var dummy = new Dictionary<string, MathObject>();
@@ -460,31 +530,6 @@ namespace CheckTikZDiagram
 
             return temp_j == other.List.Count;
 
-
-            static bool IsSameType_Script(MathObject? thisScript, MathObject? otherScript, IDictionary<string, MathObject> parameters)
-            {
-                if (thisScript == null)
-                {
-                    if (otherScript != null) return false;
-                }
-                else
-                {
-                    if (otherScript == null)
-                    {
-                        if (!thisScript.Main.EndsWith('?'))
-                        {
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        if (!thisScript.IsSameType(otherScript, parameters)) return false;
-                    }
-                }
-
-                return true;
-            }
-
             static bool RemovableBracket(Token left, Token right)
             {
                 return (left.Equals(Token.LeftParenthesis) && right.Equals(Token.RightParenthesis))
@@ -492,7 +537,7 @@ namespace CheckTikZDiagram
             }
         }
 
-        private bool IsSameType_Token(MathToken other, IDictionary<string, MathObject> parameters)
+        private bool IsSameTypeToken(MathToken other, IDictionary<string, MathObject> parameters)
         {
             // 上付き添え字についての判定
             if (this.Sup != null && !this.Sup.Main.EndsWith('?'))
@@ -512,15 +557,32 @@ namespace CheckTikZDiagram
                 return false;
             }
 
-            if (this.List.Count == 1)
+            return this.List.Count == 1 && this.List[0].IsSameType(other, parameters);
+        }
+
+
+        static bool IsSameTypeScript(MathObject? thisScript, MathObject? otherScript, IDictionary<string, MathObject> parameters)
+        {
+            if (thisScript == null)
             {
-                if (this.List[0].IsSameType(other, parameters))
+                if (otherScript != null) return false;
+            }
+            else
+            {
+                if (otherScript == null)
                 {
-                    return true;
+                    if (!thisScript.Main.EndsWith('?'))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (!thisScript.IsSameType(otherScript, parameters)) return false;
                 }
             }
 
-            return false;
+            return true;
         }
 
         public override IEnumerable<MathObject> ApplyParameters(IReadOnlyDictionary<string, MathObject> parameters, bool setNull)

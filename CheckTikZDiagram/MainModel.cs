@@ -12,13 +12,13 @@ namespace CheckTikZDiagram
 {
     public class MainModel
     {
-        public Dictionary<TokenString, Morphism> _definedMorphismDictionary = new Dictionary<TokenString, Morphism>();
-        public List<Morphism> _parameterizedMorphisms = new List<Morphism>();
-        public List<Functor> _functors = new List<Functor>();
+        public Dictionary<TokenString, Morphism> _definedMorphismDictionary = new();
+        public List<Morphism> _parameterizedMorphisms = new();
+        public List<Functor> _functors = new();
 
-        private readonly StringBuilder _text = new StringBuilder();
-        private readonly StringBuilder _texCommand = new StringBuilder();
-        private readonly StringBuilder _comment = new StringBuilder(); // コメントの中身
+        private readonly StringBuilder _textTemp = new(); // 現在読み込んでいる数式、TikZ
+        private readonly StringBuilder _texCommandTemp = new(); // 現在読み込んでいるコマンド
+        private readonly StringBuilder _commentTemp = new(); // 現在読み込んでいるコメント
         private bool _commentFlag; // コメントのときtrue
         private bool _mathFlag; // 数式環境のときtrue
         private bool _tikzFlag; // tikzpicture環境のときtrue
@@ -48,8 +48,8 @@ namespace CheckTikZDiagram
             Morphism.Construct = new Regex(Config.Instance.MorphismRegex);
 
             _definedMorphismDictionary = new Dictionary<TokenString, Morphism>();
-            _parameterizedMorphisms = CreateDefaultMorphisms().ToList();
-            _functors = CreateDefaultFunctors().ToList();
+            _parameterizedMorphisms = Config.Instance.CreateDefaultMorphisms().ToList();
+            _functors = Config.Instance.CreateDefaultFunctors().ToList();
 
             _commentFlag = false;
             _mathFlag = false;
@@ -109,38 +109,38 @@ namespace CheckTikZDiagram
             if (x == '\n')
             {
                 _commentFlag = false;
-                _text.Append(' ');
+                _textTemp.Append(x);
                 return;
             }
 
             if (_tikzFlag)
             {
-                if (x == 'n' && _comment.ToString().EndsWith("CheckTikZDiagramDefinitio"))
+                if (x == 'n' && _commentTemp.ToString().EndsWith("CheckTikZDiagramDefinitio"))
                 {
                     _tikzDefinitionFlag = true;
                 }
-                else if (x == 'e' && _comment.ToString().EndsWith("CheckTikZDiagramIgnor"))
+                else if (x == 'e' && _commentTemp.ToString().EndsWith("CheckTikZDiagramIgnor"))
                 {
                     // CheckTikZDiagramIgnoreの処理はTikZDiagramでやる
-                    _text.Append(_comment);
-                    _text.Append(x);
-                    _text.Append('\n');
+                    _textTemp.Append(_commentTemp);
+                    _textTemp.Append(x);
+                    _textTemp.Append('\n');
                 }
-                else if (x == 't' && _comment.ToString().EndsWith("CheckTikZDiagramOmi"))
+                else if (x == 't' && _commentTemp.ToString().EndsWith("CheckTikZDiagramOmi"))
                 {
                     _tikzOmitFlag = true;
                 }
             }
             else
             {
-                if (x == 'm' && _comment.ToString().EndsWith("CheckTikZDiagra"))
+                if (x == 'm' && _commentTemp.ToString().EndsWith("CheckTikZDiagra"))
                 {
                     _commentFlag = false;
                     return;
                 }
             }
 
-            _comment.Append(x);
+            _commentTemp.Append(x);
         }
 
         /// <summary>
@@ -161,27 +161,27 @@ namespace CheckTikZDiagram
             if (_texCommandFlag) throw new InvalidOperationException("_texCommandFlag == false でないのにMathModeに来るのはおかしい");
             if (_tikzOmitFlag) throw new InvalidOperationException("_omitFlag == false でないのにMathModeに来るのはおかしい");
 
-            if (x == '$' && !_text.ToString().EndsWith(@"\", StringComparison.Ordinal))
+            if (x == '$' && !_textTemp.ToString().EndsWith(@"\", StringComparison.Ordinal))
             {
                 _mathFlag = false;
                 try
                 {
-                    ReadMathText(_text.ToString());
+                    ReadMathText(_textTemp.ToString());
                 }
                 catch (InvalidOperationException ex)
                 {
-                    OutputResult(new CheckResult(_line, $"数式 {_text} が不正です。{ex.Message}", true, true));
+                    OutputResult(new CheckResult(_line, $"数式 {_textTemp} が不正です。{ex.Message}", true, true));
                 }
                 return;
             }
             else if (x == '%')
             {
                 _commentFlag = true;
-                _comment.Clear();
+                _commentTemp.Clear();
                 return;
             }
 
-            _text.Append(x);
+            _textTemp.Append(x);
         }
 
         /// <summary>
@@ -190,27 +190,32 @@ namespace CheckTikZDiagram
         /// <param name="text">数式($は含まない)</param>
         private void ReadMathText(string text)
         {
-            foreach (var mor in Morphism.Create(text, _line))
-            {
-                if (mor.Name.ToString().Contains("#") || mor.Source.ToString().Contains("#") || mor.Target.ToString().Contains("#"))
-                {
-                    _parameterizedMorphisms.Add(mor);
-                }
-                else
-                {
-                    if (IsNaturalTransformation(mor))
-                    {
-                        mor.SetNaturalTransformation();
-                    }
-                    _definedMorphismDictionary[mor.Name.ToTokenString()] = mor;
-                }
-            }
-
+            // 先に関手の定義かどうか判断する
             var func = Functor.Create(text);
             if (func != null)
             {
                 _functors.Add(func);
                 OutputResult(new CheckResult(_line, func.ToString(), false, true));
+            }
+            else
+            {
+                foreach (var mor in Morphism.Create(text, _line))
+                {
+                    if (mor.Name.ToString().Contains("#") || mor.Source.ToString().Contains("#") || mor.Target.ToString().Contains("#"))
+                    {
+                        // #が含まれる場合はパラメーター付き射として扱う
+                        _parameterizedMorphisms.Add(mor);
+                    }
+                    else
+                    {
+                        if (IsNaturalTransformation(mor))
+                        {
+                            // 自然変換の場合はここで自然変換扱いに変更しておく
+                            mor.SetNaturalTransformation();
+                        }
+                        _definedMorphismDictionary[mor.Name.ToTokenString()] = mor;
+                    }
+                }
             }
         }
 
@@ -254,18 +259,18 @@ namespace CheckTikZDiagram
 
             if (x == '}')
             {
-                if (_text.ToString().EndsWith(@"\end{tikzpicture", StringComparison.Ordinal))
+                if (_textTemp.ToString().EndsWith(@"\end{tikzpicture", StringComparison.Ordinal))
                 {
                     try
                     {
-                        new TikZDiagram(_text.ToString(), _line, _tikzDefinitionFlag, _tikzOmitFlag, ErrorOnly,
+                        new TikZDiagram(_textTemp.ToString(), _line, _tikzDefinitionFlag, _tikzOmitFlag, ErrorOnly,
                            _definedMorphismDictionary, _parameterizedMorphisms, _functors)
                            .CheckDiagram()
                            .ForEach(x => OutputResult(x));
                     }
                     catch (InvalidOperationException ex)
                     {
-                        OutputResult(new CheckResult(_line, $"tikzpicture環境 {_text} が不正です。{ex.Message}", true, true));
+                        OutputResult(new CheckResult(_line, $"tikzpicture環境 {_textTemp} が不正です。{ex.Message}", true, true));
                     }
 
                     _tikzFlag = false;
@@ -277,11 +282,11 @@ namespace CheckTikZDiagram
             else if (x == '%')
             {
                 _commentFlag = true;
-                _comment.Clear();
+                _commentTemp.Clear();
                 return;
             }
 
-            _text.Append(x);
+            _textTemp.Append(x);
         }
 
         private void TexCommandMode(char x)
@@ -300,7 +305,7 @@ namespace CheckTikZDiagram
             if (_tikzOmitFlag) throw new InvalidOperationException("_omitFlag == false でないのにTexCommandModeに来るのはおかしい");
 
             // 制御綴 1文字目
-            if (_texCommand.Length == 1)
+            if (_texCommandTemp.Length == 1)
             {
                 switch (x)
                 {
@@ -320,7 +325,7 @@ namespace CheckTikZDiagram
                         return;
 
                     default:
-                        _texCommand.Append(x);
+                        _texCommandTemp.Append(x);
                         return;
                 }
             }
@@ -329,16 +334,16 @@ namespace CheckTikZDiagram
             {
                 if (('a' <= x && x <= 'z') || ('A' <= x && x <= 'Z') || x == '{' || x == '}')
                 {
-                    _texCommand.Append(x);
+                    _texCommandTemp.Append(x);
                     return;
                 }
 
                 // 制御綴終了
-                if (_texCommand.ToString() == @"\begin{tikzpicture}")
+                if (_texCommandTemp.ToString() == @"\begin{tikzpicture}")
                 {
                     _tikzFlag = true;
-                    _text.Clear();
-                    _text.Append(x);
+                    _textTemp.Clear();
+                    _textTemp.Append(x);
 
                     _texCommandFlag = false;
                     return;
@@ -346,19 +351,19 @@ namespace CheckTikZDiagram
 
                 if (x == '\\')
                 {
-                    _texCommand.Clear();
-                    _texCommand.Append('\\');
+                    _texCommandTemp.Clear();
+                    _texCommandTemp.Append('\\');
                 }
                 else if (x == '$')
                 {
                     _mathFlag = true;
-                    _text.Clear();
+                    _textTemp.Clear();
                     _texCommandFlag = false;
                 }
                 else if (x == '%')
                 {
                     _commentFlag = true;
-                    _comment.Clear();
+                    _commentTemp.Clear();
                     _texCommandFlag = false;
                 }
                 else
@@ -386,47 +391,24 @@ namespace CheckTikZDiagram
             if (x == '$')
             {
                 _mathFlag = true;
-                _text.Clear();
+                _textTemp.Clear();
             }
             else if (x == '\\')
             {
                 _texCommandFlag = true;
-                _texCommand.Clear();
-                _texCommand.Append('\\');
+                _texCommandTemp.Clear();
+                _texCommandTemp.Append('\\');
             }
             else if (x == '%')
             {
                 _commentFlag = true;
-                _comment.Clear();
+                _commentTemp.Clear();
             }
         }
 
         private void OutputResult(CheckResult result)
         {
             this.OutputEvent?.Invoke(result);
-        }
-
-        private IEnumerable<Morphism> CreateDefaultMorphisms()
-        {
-            foreach (var item in Config.Instance.Morphisms)
-            {
-                foreach (var mor in Morphism.Create(item))
-                {
-                    yield return mor;
-                }
-            }
-        }
-
-        private IEnumerable<Functor> CreateDefaultFunctors()
-        {
-            foreach (var item in Config.Instance.Functors)
-            {
-                var x = Functor.Create(item);
-                if (x != null)
-                {
-                    yield return x;
-                }
-            }
         }
     }
 }

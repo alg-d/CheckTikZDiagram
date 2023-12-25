@@ -6,7 +6,7 @@ using System.Linq;
 namespace UnitTestProject1
 {
     [TestClass]
-    public class TestTikZArrow
+    public class TikZからTikZArrowを生成するテスト
     {
         [TestMethod]
         public void Create通常()
@@ -20,9 +20,6 @@ namespace UnitTestProject1
             TikZArrow.Create(@"\draw[->] (x) to node {$\scriptstyle \alpha\otimes\beta$} (y)").TestSingle().TestTikZArrow(@"\alpha\otimes\beta", "x", "y");
 
             TikZArrow.Create(@"\draw[->] (aaa) -- node {$\scriptstyle f$} (bbb)").TestSingle().TestTikZArrow("f", "aaa", "bbb");
-            TikZArrow.Create(@"\draw[->] (aaa) -| node {$\scriptstyle f$} (bbb)").TestSingle().TestTikZArrow("f", "aaa", "bbb");
-            TikZArrow.Create(@"\draw[->] (x0) to (x1) to node {$\scriptstyle f$} (x2) to (x3)").TestSingle().TestTikZArrow("f", "x0", "x3");
-            TikZArrow.Create(@"\draw[->] (a) to (a -| dummy) to node {$\scriptstyle f$} (dummy |- b) to (b)").TestSingle().TestTikZArrow("f", "a", "b");
 
             TikZArrow.Create(@"\draw[->, bend left=30] (1) to node {$\scriptstyle 0$} (D)").TestSingle().TestTikZArrow("0", "1", "D");
             TikZArrow.Create(@"\draw[->, bend right=30] (1) to node {$\scriptstyle 0$} (D)").TestSingle().TestTikZArrow("0", "1", "D");
@@ -30,6 +27,29 @@ namespace UnitTestProject1
                 .TestSingle().TestTikZArrow("0", "1", "D");
             TikZArrow.Create(@"\draw[->] (1) to node[transform canvas={xshift=14pt,yshift=20pt}] {$\scriptstyle 0$} (D)")
                 .TestSingle().TestTikZArrow("0", "1", "D");
+        }
+
+        [TestMethod]
+        public void Create折れ線()
+        {
+            TikZArrow.Create(@"\draw[->] (aaa) -| node {$\scriptstyle f$} (bbb)").TestSingle().TestTikZArrow("f", "aaa", "bbb");
+            TikZArrow.Create(@"\draw[->] (x0) to (x1) to node {$\scriptstyle f$} (x2) to (x3)").TestSingle().TestTikZArrow("f", "x0", "x3");
+            TikZArrow.Create(@"\draw[->] (a) to (a -| dummy) to node {$\scriptstyle f$} (dummy |- b) to (b)").TestSingle().TestTikZArrow("f", "a", "b");
+
+            TikZArrow.Create(@"\draw[->, bend left=30] (1) to node {$\scriptstyle 0$} (D)").TestSingle().TestTikZArrow("0", "1", "D");
+            TikZArrow.Create(@"\draw[->] (1) to[bend right=30] node {$\scriptstyle 0$} (D)").TestSingle().TestTikZArrow("0", "1", "D");
+            TikZArrow.Create(@"\draw[->, transform canvas={xshift=14pt,yshift=20pt}] (1) to node {$\scriptstyle 0$} (D)")
+                .TestSingle().TestTikZArrow("0", "1", "D");
+            TikZArrow.Create(@"\draw[->] (1) to node[transform canvas={xshift=14pt,yshift=20pt}] {$\scriptstyle 0$} (D)")
+                .TestSingle().TestTikZArrow("0", "1", "D");
+        }
+        [TestMethod]
+        public void Create角度方角()
+        {
+            TikZArrow.Create(@"\draw[->] (a.90) -- node {$\scriptstyle f$} (b.288)").TestSingle().TestTikZArrow("f", "a", "b");
+            TikZArrow.Create(@"\draw[->] (a.south) -- node {$\scriptstyle F(f)$} (b.288)").TestSingle().TestTikZArrow("F(f)", "a", "b");
+            TikZArrow.Create(@"\draw[->] (a.90) -- node {$\scriptstyle \pair{f, g}$} (b.north west)").TestSingle().TestTikZArrow(@"\pair{f, g}", "a", "b");
+            TikZArrow.Create(@"\draw[->] (a.north east) -- node {$\scriptstyle \yoneda(g)$} (b.west)").TestSingle().TestTikZArrow(@"\yoneda(g)", "a", "b");
         }
 
         [TestMethod]
@@ -41,6 +61,11 @@ namespace UnitTestProject1
             xs[1].TestTikZArrow("g", "a", "b");
 
             xs = TikZArrow.Create(@"\draw[->] (a) to node {$\scriptstyle f=g$} (b)").ToList();
+            xs.Count.Is(2);
+            xs[0].TestTikZArrow("f", "a", "b");
+            xs[1].TestTikZArrow("g", "a", "b");
+
+            xs = TikZArrow.Create(@"\draw[->] (a) to node {$\scriptstyle f\,=\,g$} (b)").ToList();
             xs.Count.Is(2);
             xs[0].TestTikZArrow("f", "a", "b");
             xs[1].TestTikZArrow("g", "a", "b");

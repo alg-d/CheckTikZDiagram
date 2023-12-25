@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace UnitTestProject1
 {
     [TestClass]
-    public class TestTikZDiagram_CheckNode
+    public class EqualsAsMathObjectのテスト
     {
         [TestMethod]
         public void Morphism_通常()
@@ -16,29 +16,26 @@ namespace UnitTestProject1
             {
                 { "F".ToTokenString(), new Morphism("F", @"\cat{C}", @"\cat{D}", MorphismType.Functor, -1) },
             };
+            var diagram = CreateTikZDiagram(dic);
 
             var left = new MathObjectFactory("Fa").CreateSingle();
             var right = new MathObjectFactory("Fa").CreateSingle();
-            new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), Array.Empty<Functor>())
-                .EqualsAsMathObject(left, right)
+            diagram.EqualsAsMathObject(left, right)
                 .IsTrue();
 
             left = new MathObjectFactory("F(a)").CreateSingle();
             right = new MathObjectFactory("Fa").CreateSingle();
-            new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), Array.Empty<Functor>())
-                .EqualsAsMathObject(left, right)
+            diagram.EqualsAsMathObject(left, right)
                 .IsTrue();
 
             left = new MathObjectFactory("Fa").CreateSingle();
             right = new MathObjectFactory("F(a)").CreateSingle();
-            new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), Array.Empty<Functor>())
-                .EqualsAsMathObject(left, right)
+            diagram.EqualsAsMathObject(left, right)
                 .IsTrue();
 
             left = new MathObjectFactory("F(a)").CreateSingle();
             right = new MathObjectFactory("F(a)").CreateSingle();
-            new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), Array.Empty<Functor>())
-                .EqualsAsMathObject(left, right)
+            diagram.EqualsAsMathObject(left, right)
                 .IsTrue();
         }
 
@@ -49,17 +46,14 @@ namespace UnitTestProject1
             {
                 Functor.Create("Fab", "Gba")
             };
+            var diagram = CreateTikZDiagram(list);
 
             var right = new MathObjectFactory("Gba").CreateSingle();
-
-            CreateTikZDiagram(list)
-                .EqualsAsMathObject(new MathObjectFactory("Fab").CreateSingle(), right)
+            diagram.EqualsAsMathObject(new MathObjectFactory("Fab").CreateSingle(), right)
                 .IsTrue();
-            CreateTikZDiagram(list)
-                .EqualsAsMathObject(new MathObjectFactory("Gba").CreateSingle(), right)
+            diagram.EqualsAsMathObject(new MathObjectFactory("Gba").CreateSingle(), right)
                 .IsTrue();
-            CreateTikZDiagram(list)
-                .EqualsAsMathObject(new MathObjectFactory("F").CreateSingle(), right)
+            diagram.EqualsAsMathObject(new MathObjectFactory("F").CreateSingle(), right)
                 .IsFalse();
         }
 
@@ -70,20 +64,16 @@ namespace UnitTestProject1
             {
                 Functor.Create("F#1", "x")
             };
+            var diagram = CreateTikZDiagram(list);
 
             var right = new MathObjectFactory("x").CreateSingle();
-
-            CreateTikZDiagram(list)
-                .EqualsAsMathObject(new MathObjectFactory("Fa").CreateSingle(), right)
+            diagram.EqualsAsMathObject(new MathObjectFactory("Fa").CreateSingle(), right)
                 .IsTrue();
-            CreateTikZDiagram(list)
-                .EqualsAsMathObject(new MathObjectFactory("F(b)").CreateSingle(), right)
+            diagram.EqualsAsMathObject(new MathObjectFactory("F(b)").CreateSingle(), right)
                 .IsTrue();
-            CreateTikZDiagram(list)
-                .EqualsAsMathObject(new MathObjectFactory("F(uvw)").CreateSingle(), right)
+            diagram.EqualsAsMathObject(new MathObjectFactory("F(uvw)").CreateSingle(), right)
                 .IsTrue();
-            CreateTikZDiagram(list)
-                .EqualsAsMathObject(new MathObjectFactory("Fs").CreateSingle(), new MathObjectFactory("Ft").CreateSingle())
+            diagram.EqualsAsMathObject(new MathObjectFactory("Fs").CreateSingle(), new MathObjectFactory("Ft").CreateSingle())
                 .IsTrue();
         }
 
@@ -94,46 +84,30 @@ namespace UnitTestProject1
             {
                 Functor.Create("F#1", "G(#1)")
             };
-
-            var left = new MathObjectFactory("Fa").CreateSingle();
-            var right = new MathObjectFactory("G(a)").CreateSingle();
-            CreateTikZDiagram(list)
-                .EqualsAsMathObject(left, right)
-                .IsTrue();
-
-            left = new MathObjectFactory("F(a)").CreateSingle();
-            right = new MathObjectFactory("G(a)").CreateSingle();
-            CreateTikZDiagram(list)
-                .EqualsAsMathObject(left, right)
-                .IsTrue();
-
-            //left = new MathObjectFactory("Fa").CreateSingle();
-            //right = new MathObjectFactory("Ga").CreateSingle();
-            //CreateTikZDiagram(list)
-            //    .CheckNode(left, right)
-            //    .IsTrue();
-
-            //left = new MathObjectFactory("F(a)").CreateSingle();
-            //right = new MathObjectFactory("Ga").CreateSingle();
-            //CreateTikZDiagram(list)
-            //    .CheckNode(left, right)
-            //    .IsTrue();
-
             var dic = new Dictionary<TokenString, Morphism>
             {
                 { "G".ToTokenString(), new Morphism("G", @"\cat{C}", @"\cat{D}", MorphismType.Functor, -1) },
             };
+            var diagram = CreateTikZDiagram(dic, list);
+
+            var left = new MathObjectFactory("Fa").CreateSingle();
+            var right = new MathObjectFactory("G(a)").CreateSingle();
+            diagram.EqualsAsMathObject(left, right)
+                .IsTrue();
+
+            left = new MathObjectFactory("F(a)").CreateSingle();
+            right = new MathObjectFactory("G(a)").CreateSingle();
+            diagram.EqualsAsMathObject(left, right)
+                .IsTrue();
 
             left = new MathObjectFactory("Fa").CreateSingle();
             right = new MathObjectFactory("Ga").CreateSingle();
-            new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), list)
-                .EqualsAsMathObject(left, right)
+            diagram.EqualsAsMathObject(left, right)
                 .IsTrue();
 
             left = new MathObjectFactory("F(a)").CreateSingle();
             right = new MathObjectFactory("Ga").CreateSingle();
-            new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), list)
-                .EqualsAsMathObject(left, right)
+            diagram.EqualsAsMathObject(left, right)
                 .IsTrue();
         }
 
@@ -344,7 +318,12 @@ namespace UnitTestProject1
         }
 
 
+        private TikZDiagram CreateTikZDiagram(IDictionary<TokenString, Morphism> dic)
+            => new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), Array.Empty<Functor>());
+
         private TikZDiagram CreateTikZDiagram(IList<Functor> list)
             => new TikZDiagram("", -1, false, false, true, new Dictionary<TokenString, Morphism>(), Array.Empty<Morphism>(), list);
+        private TikZDiagram CreateTikZDiagram(IDictionary<TokenString, Morphism> dic, IList<Functor> list)
+            => new TikZDiagram("", -1, false, false, true, dic, Array.Empty<Morphism>(), list);
     }
 }

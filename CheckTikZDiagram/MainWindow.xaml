@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CheckTikZDiagram"
         mc:Ignorable="d"
-        Title="CheckTikZDiagram" Height="730" Width="1200">
+        Title="CheckTikZDiagram" Height="800" Width="1200">
     <Window.DataContext>
         <local:MainViewModel />
     </Window.DataContext>
@@ -79,7 +79,9 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="50" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -90,6 +92,7 @@
                     <ColumnDefinition Width="10" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="200" />
                     <ColumnDefinition Width="200" />
                     <ColumnDefinition Width="200" />
                     <ColumnDefinition Width="200" />
@@ -109,30 +112,44 @@
                 <Label   Grid.Row="3" Grid.Column="1" Content="逆射" />
                 <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding Config.Inverse}" />
 
-                <Label   Grid.Row="4" Grid.Column="1" Content="随伴" />
-                <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding Config.Adjoint}" />
+                <Label   Grid.Row="4" Grid.Column="1" Content="恒等射" />
+                <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding Config.IdentityMorphism}" />
 
-                <Label   Grid.Row="5" Grid.Column="1" Content="射の合成" />
-                <TextBox Grid.Row="5" Grid.Column="2" Text="{Binding Config.Composite}" />
+                <Label   Grid.Row="5" Grid.Column="1" Content="恒等関手" />
+                <TextBox Grid.Row="5" Grid.Column="2" Text="{Binding Config.IdentityFunctor}" />
+
+                <Label   Grid.Row="6" Grid.Column="1" Content="対角関手" />
+                <TextBox Grid.Row="6" Grid.Column="2" Text="{Binding Config.Diagonal}" />
+                
+                <Label   Grid.Row="7" Grid.Column="1" Content="随伴" />
+                <TextBox Grid.Row="7" Grid.Column="2" Text="{Binding Config.Adjoint}" />
+
+                <Label   Grid.Row="8" Grid.Column="1" Content="射の合成" />
+                <TextBox Grid.Row="8" Grid.Column="2" Text="{Binding Config.Composite}" />
 
                 <Label                     Grid.Row="1" Grid.Column="3" Content="圏とみなすTeXコマンド" />
-                <local:EditCollectionPanel Grid.Row="2" Grid.Column="3" Grid.RowSpan="8" Margin="10,0,0,0" Height="300" VerticalAlignment="Top"
+                <local:EditCollectionPanel Grid.Row="2" Grid.Column="3" Grid.RowSpan="9" Margin="10,0,0,0" Height="300" VerticalAlignment="Top"
                                            ItemList="{Binding Config.Categories}" />
 
                 <Label                     Grid.Row="1" Grid.Column="4" Content="Kan拡張とみなすTeXコマンド" />
-                <local:EditCollectionPanel Grid.Row="2" Grid.Column="4" Grid.RowSpan="5" Margin="10,0,0,0" ItemList="{Binding Config.KanExtensions}" />
+                <local:EditCollectionPanel Grid.Row="2" Grid.Column="4" Grid.RowSpan="6" Margin="10,0,0,0" ItemList="{Binding Config.KanExtensions}" />
 
-                <Label                     Grid.Row="7" Grid.Column="4" Content="KanリフトとみなすTeXコマンド" />
-                <local:EditCollectionPanel Grid.Row="8" Grid.Column="4" Height="160" Margin="10,0,0,0" ItemList="{Binding Config.KanLifts}" />
+                <Label                     Grid.Row="8" Grid.Column="4" Content="KanリフトとみなすTeXコマンド" />
+                <local:EditCollectionPanel Grid.Row="9" Grid.Column="4" Height="160" Margin="10,0,0,0" ItemList="{Binding Config.KanLifts}" />
 
                 <Label                     Grid.Row="1" Grid.Column="5" Content="二項演算とみなすTeXコマンド" />
-                <local:EditCollectionPanel Grid.Row="2" Grid.Column="5" Grid.RowSpan="5" Margin="10,0,0,0" ItemList="{Binding Config.Operators}" />
+                <local:EditCollectionPanel Grid.Row="2" Grid.Column="5" Grid.RowSpan="6" Margin="10,0,0,0" ItemList="{Binding Config.Operators}" />
 
-                <Label                     Grid.Row="7" Grid.Column="5" Content="射の合成(二項演算)とみなすTeXコマンド" />
-                <local:EditCollectionPanel Grid.Row="8" Grid.Column="5" Height="160" Margin="10,0,0,0" ItemList="{Binding Config.Compositions}" />
+                <Label                     Grid.Row="8" Grid.Column="5" Content="射の合成(二項演算)とみなすTeXコマンド" />
+                <local:EditCollectionPanel Grid.Row="9" Grid.Column="5" Height="160" Margin="10,0,0,0" ItemList="{Binding Config.Compositions}" />
 
                 <Label                     Grid.Row="1" Grid.Column="6" Content="(余)極限とみなすTeXコマンド" />
-                <local:EditCollectionPanel Grid.Row="2" Grid.Column="6" Grid.RowSpan="5" Margin="10,0,0,0" ItemList="{Binding Config.Limits}" />
+                <local:EditCollectionPanel Grid.Row="2" Grid.Column="6" Grid.RowSpan="9" Margin="10,0,0,0" Height="300" VerticalAlignment="Top"
+                                           ItemList="{Binding Config.Limits}" />
+                
+                <Label                     Grid.Row="1" Grid.Column="7" Content="処理時に無視するTeXコマンド" />
+                <local:EditCollectionPanel Grid.Row="2" Grid.Column="7" Grid.RowSpan="9" Margin="10,0,0,0" Height="300" VerticalAlignment="Top"
+                                           ItemList="{Binding Config.IgnoreCommands}" />
             </Grid>
         </TabItem>
         <TabItem Header="設定2">
@@ -145,7 +162,11 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="180" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="180" />
                     <RowDefinition Height="*" />
@@ -156,23 +177,26 @@
                     <ColumnDefinition Width="800" />
                 </Grid.ColumnDefinitions>
 
-                <Label   Grid.Row="0" Grid.Column="0" Content="nodeのフォーマット" />
-                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Config.TikZNodeRegex}" />
-                <Label   Grid.Row="1" Grid.ColumnSpan="2" Content="name: nodeの名前　math: nodeの数式" Margin="0,0,0,10" />
+                <Label     Grid.Row="0" Grid.Column="0" Content="nodeのフォーマット" />
+                <TextBox   Grid.Row="0" Grid.Column="1" Text="{Binding Config.TikZNodeRegex}" />
+                <Label     Grid.Row="1" Grid.ColumnSpan="2" Content="name: nodeの名前　math: nodeの数式" Margin="0,0,0,10" />
 
-                <Label   Grid.Row="2" Grid.Column="0" Content="arrowのフォーマット"/>
-                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Config.TikZArrowRegex}" />
-                <Label   Grid.Row="3" Grid.ColumnSpan="2" Content="arrow: drawのオプション　source: 始点の名前　math: 射の数式　target: 終点の名前" Margin="0,0,0,10" />
+                <Label     Grid.Row="2" Grid.Column="0" Content="arrowのフォーマット"/>
+                <TextBox   Grid.Row="2" Grid.Column="1" Text="{Binding Config.TikZArrowRegex}" />
+                <Label     Grid.Row="3" Grid.ColumnSpan="2" Content="arrow: drawのオプション　source: 始点の名前　math: 射の数式　target: 終点の名前" Margin="0,0,0,10" />
 
-                <Label   Grid.Row="4" Grid.Column="0" Content="射のフォーマット" />
-                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Config.MorphismRegex}" />
-                <Label   Grid.Row="5" Grid.ColumnSpan="2" Content="name: 射の数式　source: domainの数式　arrow: 射の種類を決める部分　target: codomainの数式" Margin="0,0,0,10" />
+                <Label     Grid.Row="4" Grid.Column="0" Content="射のフォーマット" />
+                <TextBox   Grid.Row="4" Grid.Column="1" Text="{Binding Config.MorphismRegex}" />
+                <Label     Grid.Row="5" Grid.ColumnSpan="2" Content="name: 射の数式　source: domainの数式　arrow: 射の種類を決める部分　target: codomainの数式" Margin="0,0,0,10" />
 
-                <Label   Grid.Row="6" Grid.Column="0" Content="パラメーター付き射" />
-                <local:EditCollectionPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" ItemList="{Binding Config.Morphisms}" />
+                <Label     Grid.Row="6" Grid.Column="0" Content="パラメーター付き射" />
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="{Binding Config.MorphismsIdentity}" FontFamily="Consolas" Padding="7,2,2,2" />
+                <local:EditCollectionPanel Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2" ItemList="{Binding Config.Morphisms}" />
 
-                <Label   Grid.Row="8" Grid.Column="0" Content="関手" />
-                <local:EditCollectionPanel Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2" ItemList="{Binding Config.Functors}" />
+                <Label     Grid.Row="10" Grid.Column="0" Content="関手" />
+                <TextBlock Grid.Row="11" Grid.Column="0" Text="{Binding Config.FunctorsIdentity}" FontFamily="Consolas" Padding="7,2,2,2" />
+                <TextBlock Grid.Row="12" Grid.Column="0" Text="{Binding Config.FunctorsDiagonal}" FontFamily="Consolas" Padding="7,2,2,2" />
+                <local:EditCollectionPanel Grid.Row="13" Grid.Column="0" Grid.ColumnSpan="2" ItemList="{Binding Config.Functors}" />
             </Grid>
         </TabItem>
     </TabControl>

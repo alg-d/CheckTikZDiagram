@@ -51,10 +51,13 @@ namespace CheckTikZDiagram
         public string Value { get; }
 
         /// <summary>
-        /// Tokenの元となった文字列(空の場合はプログラム側で生成したToken( { と } のこと))
+        /// Tokenの元となった文字列(Originが空の場合はプログラム側で生成したToken( { と } のこと)になる)
         /// </summary>
         public string Origin { get; }
 
+        /// <summary>
+        /// 空Tokenならtrue
+        /// </summary>
         public bool IsEmpty => this.Value.IsNullOrEmpty();
 
         public Token(string value, string origin)
@@ -63,22 +66,42 @@ namespace CheckTikZDiagram
             Origin = origin;
         }
 
+        /// <summary>
+        /// 開き括弧を表すTokenならtrue
+        /// </summary>
         public bool IsOpenBracket()
         {
             return Config.Instance.OpenBrackets.Contains(this.Value);
         }
 
+        /// <summary>
+        /// 閉じ括弧を表すTokenならtrue
+        /// </summary>
         public bool IsCloseBracket()
         {
             return Config.Instance.CloseBrackets.Contains(this.Value);
         }
 
+        /// <summary>
+        /// Separatorを表すTokenならtrue
+        /// </summary>
         public bool IsSeparator()
         {
             return Config.Instance.Separators.Contains(this.Value);
         }
 
+        /// <summary>
+        /// 無視するTokenならtrue
+        /// </summary>
+        public bool IsIgnored()
+        {
+            return Config.Instance.IgnoreCommands.Contains(this.Value);
+        }
 
+        /// <summary>
+        /// このTokenのみを含むTokenStringを生成する
+        /// </summary>
+        /// <returns></returns>
         public TokenString ToTokenString()
         {
             if (this.IsEmpty)

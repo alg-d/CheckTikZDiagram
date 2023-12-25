@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace UnitTestProject1
 {
     [TestClass]
-    public class TestMainModel
+    public class TeX全体を読み込んだときのテスト
     {
         [TestMethod]
         public void Empty()
@@ -123,27 +123,6 @@ test
 \end{tikzpicture}\]
 test
 \end{document}", 1);
-        }
-
-        [TestMethod]
-        public void 数式コメント()
-        {
-            TestMain(@"\documentclass[uplatex,a4j,12pt,dvipdfmx]{jsarticle}
-\author{algd}
-\title{ああああああああああああああああああ}
-\begin{document}
-test
-ああああ\\
-ああ$\test\\ abcde\\$ああああ\\ああああ．
-ああああ$g\colon a\rightarrow x%bcd $
-+y$ test test $f\colon a\rightarrow x$ test
-\[\begin{tikzpicture}[auto]
-\node (a) at (0, 1.2) {$a$}; \node (x) at (1.2, 1.2) {$x$}; \node (y) at (1.2, 1.2) {$x+y$};
-\draw[->] (a) to node {$\scriptstyle f$} (x);
-\draw[->] (a) to node {$\scriptstyle g$} (y);
-\end{tikzpicture}\]
-test
-\end{document}", 0);
         }
 
         [TestMethod]

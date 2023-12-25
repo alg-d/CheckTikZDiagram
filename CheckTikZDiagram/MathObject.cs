@@ -70,7 +70,7 @@ namespace CheckTikZDiagram
         public abstract bool IsCategory();
 
         /// <summary>
-        /// MathObjectが同じ「型」であるかを調べる
+        /// MathObjectが同じ「型」であるかを調べる(otherには変数を含まない)(parametersの読み書きを行う)
         /// </summary>
         /// <param name="other">#1, #2, …, #9を含まないMathObject</param>
         /// <param name="parameters">#1, #2, …, #9に対応するパラメーターを取得し格納する辞書</param>
@@ -82,7 +82,7 @@ namespace CheckTikZDiagram
         /// (#i が含まれない場合は自分自身を返す。)
         /// </summary>
         /// <param name="parameters">代入するパラメーター</param>
-        /// <param name="setNull">省略可変数(#!?, #2?, …, #9?)を許す場合true</param>
+        /// <param name="setNull">省略可変数(#1?, #2?, …, #9?)を許す場合true</param>
         /// <returns></returns>
         public abstract IEnumerable<MathObject> ApplyParameters(IReadOnlyDictionary<string, MathObject> parameters, bool setNull);
 

@@ -6,10 +6,10 @@ using System.Collections.Generic;
 namespace UnitTestProject1
 {
     [TestClass]
-    public class TestMorphism
+    public class 数式からMorphismを生成するテスト
     {
         [TestMethod]
-        public void Create通常()
+        public void 通常の射()
         {
             Morphism.Create(@"f\colon a\rightarrow b").TestSingle().TestMorphism("f", "a", "b", MorphismType.OneMorphism);
 
@@ -21,17 +21,30 @@ namespace UnitTestProject1
             Morphism.Create(@"\test^{\test}\colon \test\test\rightarrow\testtest\test").TestSingle()
                 .TestMorphism(@"\test ^{\test }", @"\test\test", @"\testtest\test", MorphismType.OneMorphism);
 
+            Morphism.Create(@"\eta_a\colon \id_{\cat{C}}(a)\rightarrow GF(a)").TestSingle()
+                .TestMorphism(@"\eta_a", @"\id_{\cat{C}}(a)", "GF(a)", MorphismType.OneMorphism);
+        }
+        [TestMethod]
+        public void 複数の射を生成()
+        {
             var xs = Morphism.Create(@"f, g\colon a\rightarrow b").ToList();
             xs.Count.Is(2);
             xs[0].TestMorphism("f", "a", "b", MorphismType.OneMorphism);
             xs[1].TestMorphism("g", "a", "b", MorphismType.OneMorphism);
 
-            Morphism.Create(@"\eta_a\colon \id_{\cat{C}}(a)\rightarrow GF(a)").TestSingle()
-                .TestMorphism(@"\eta_a", @"\id_{\cat{C}}(a)", "GF(a)", MorphismType.OneMorphism);
+            xs = Morphism.Create(@"F\cong G\colon\cat{C}\rightarrow\cat{D}").ToList();
+            xs.Count.Is(2);
+            xs[0].TestMorphism("F", @"\cat{C}", @"\cat{D}", MorphismType.Functor);
+            xs[1].TestMorphism("G", @"\cat{C}", @"\cat{D}", MorphismType.Functor);
+
+            xs = Morphism.Create(@"F:=LM\colon\cat{C}\rightarrow\cat{D}").ToList();
+            xs.Count.Is(2);
+            xs[0].TestMorphism("F", @"\cat{C}", @"\cat{D}", MorphismType.Functor);
+            xs[1].TestMorphism("LM", @"\cat{C}", @"\cat{D}", MorphismType.Functor);
         }
 
         [TestMethod]
-        public void CreateTwoMorphism()
+        public void TwoMorphismの生成()
         {
             Morphism.Create(@"\theta\colon F\Rightarrow G").TestSingle().TestMorphism(@"\theta", "F", "G", MorphismType.TwoMorphism);
             Morphism.Create(@"\theta_i\colon Fi\rightarrow Gi").TestSingle().TestMorphism(@"\theta _{i}", "Fi", "Gi", MorphismType.OneMorphism);
@@ -55,7 +68,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void CreateThreeMorphism()
+        public void ThreeMorphismの生成()
         { 
             var xs = Morphism.Create(@"\Gamma, \Sigma\colon\theta\Rrightarrow\rho\colon f\Rightarrow g\colon a\rightarrow b").ToList();
             xs.Count.Is(8);
@@ -70,31 +83,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void CreateHom()
-        {
-            Morphism.Create(@"f\in\Hom(a,b)").TestSingle().TestMorphism("f", "a", "b", MorphismType.OneMorphism);
-            Morphism.Create(@"f\in\Hom_{\cat{C}}(a,b)").TestSingle().TestMorphism("f", "a", "b", MorphismType.OneMorphism);
-            Morphism.Create(@" g \in \Hom _{\cat{C}} ( c , d )").TestSingle().TestMorphism("g", "c", "d", MorphismType.OneMorphism);
-
-            Morphism.Create(@"\test\in\Hom(a, b)").TestSingle().TestMorphism(@"\test", "a", "b", MorphismType.OneMorphism);
-            Morphism.Create(@"\test\test\in\Hom_{\cat{C}}(a, b)").TestSingle().TestMorphism(@"\test \test", "a", "b", MorphismType.OneMorphism);
-            Morphism.Create(@"\mor{f}\in\Hom(a, b)").TestSingle().TestMorphism(@"\mor {f}", "a", "b", MorphismType.OneMorphism);
-
-            var xs = Morphism.Create(@"K, L\in\Hom_{\Cat[\moncat{V}]}(\encat{C}, \encat{D})").ToList();
-            xs.Count.Is(2);
-            xs[0].TestMorphism(@"K", @"\encat {C}", @"\encat {D}", MorphismType.Functor);
-            xs[1].TestMorphism(@"L", @"\encat {C}", @"\encat {D}", MorphismType.Functor);
-
-            xs = Morphism.Create(@"s, t\in\Hom_{\Cat}(\Set, \Mod[R])").ToList();
-            xs.Count.Is(2);
-            xs[0].TestMorphism("s", "\\Set", "\\Mod [R]", MorphismType.Functor);
-            xs[1].TestMorphism("t", "\\Set", "\\Mod [R]", MorphismType.Functor);
-
-            Morphism.Create(@"f\in\Hom(a_i, c^b)").TestSingle().TestMorphism("f", "a_{i}", "c^{b}", MorphismType.OneMorphism);
-        }
-
-        [TestMethod]
-        public void Create関手()
+        public void 関手()
         {
             Morphism.Create(@"F\colon\cat{C}\rightarrow\cat{D}").TestSingle().TestMorphism("F", @"\cat{C}", @"\cat{D}", MorphismType.Functor);
             Morphism.Create(@"U\colon\Ab\rightarrow\Set").TestSingle().TestMorphism("U", @"\Ab", @"\Set", MorphismType.Functor);
@@ -114,14 +103,14 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphismでない()
+        public void Morphismでないときは生成しない()
         {
             Morphism.Create(@"a").Count().Is(0);
             Morphism.Create(@"\cat{C}").Count().Is(0);
         }
 
         [TestMethod]
-        public void Create随伴()
+        public void 随伴()
         {
             var xs = Morphism.Create(@"F\dashv G\colon\cat{C}\rightarrow\cat{D}").ToList();
             xs.Count.Is(2);
@@ -142,7 +131,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Create変数()
+        public void 変数付き射()
         {
             var mor = Morphism.Create(@"\theta^{#1}\colon F(#1)\rightarrow G#1").TestSingle();
             mor.Name.AsMathSequence().List.Count.Is(1);
@@ -244,6 +233,41 @@ namespace UnitTestProject1
             mor.Target.AsMathSequence().List[1].AsMathSequence().LeftBracket.TestToken("{");
             mor.Target.AsMathSequence().List[1].AsMathSequence().RightBracket.TestToken("}");
             mor.Target.ToTokenString().TestString(@"\widehat{a}");
+        }
+
+        [TestMethod]
+        public void Homから元を取ったとき()
+        {
+            Morphism.Create(@"f\in\Hom(a,b)").TestSingle().TestMorphism("f", "a", "b", MorphismType.OneMorphism);
+            Morphism.Create(@"f\in\Hom_{\cat{C}}(a,b)").TestSingle().TestMorphism("f", "a", "b", MorphismType.OneMorphism);
+            Morphism.Create(@" g \in \Hom _{\cat{C}} ( c , d )").TestSingle().TestMorphism("g", "c", "d", MorphismType.OneMorphism);
+
+            Morphism.Create(@"\test\in\Hom(a, b)").TestSingle().TestMorphism(@"\test", "a", "b", MorphismType.OneMorphism);
+            Morphism.Create(@"\test\test\in\Hom_{\cat{C}}(a, b)").TestSingle().TestMorphism(@"\test \test", "a", "b", MorphismType.OneMorphism);
+            Morphism.Create(@"\mor{f}\in\Hom(a, b)").TestSingle().TestMorphism(@"\mor {f}", "a", "b", MorphismType.OneMorphism);
+
+            var xs = Morphism.Create(@"K, L\in\Hom_{\Cat[\moncat{V}]}(\encat{C}, \encat{D})").ToList();
+            xs.Count.Is(2);
+            xs[0].TestMorphism(@"K", @"\encat {C}", @"\encat {D}", MorphismType.Functor);
+            xs[1].TestMorphism(@"L", @"\encat {C}", @"\encat {D}", MorphismType.Functor);
+
+            xs = Morphism.Create(@"s, t\in\Hom_{\Cat}(\Set, \Mod[R])").ToList();
+            xs.Count.Is(2);
+            xs[0].TestMorphism("s", @"\Set", @"\Mod [R]", MorphismType.Functor);
+            xs[1].TestMorphism("t", @"\Set", @"\Mod [R]", MorphismType.Functor);
+
+            Morphism.Create(@"f\in\Hom(a_i, c^b)").TestSingle().TestMorphism("f", "a_{i}", "c^{b}", MorphismType.OneMorphism);
+        }
+
+        [TestMethod]
+        public void 関手圏から元を取ったとき()
+        {
+            Morphism.Create(@"F\in\cat{D}^{\cat{C}}").TestSingle().TestMorphism("F", @"\cat{C}", @"\cat{D}", MorphismType.Functor);
+
+            var xs = Morphism.Create(@"K, L\in\encat{M}^{\encat{C}}").ToList();
+            xs.Count.Is(2);
+            xs[0].TestMorphism(@"K", @"\encat {C}", @"\encat {M}", MorphismType.Functor);
+            xs[1].TestMorphism(@"L", @"\encat {C}", @"\encat {M}", MorphismType.Functor);
         }
     }
 }

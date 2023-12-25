@@ -14,7 +14,7 @@ namespace CheckTikZDiagram
     public class Morphism
     {
         static private readonly Regex _doubleColon = new Regex(@"^(.*?\\colon)(.*?)(\\colon.*)$");
-        static private readonly Regex _homSet = new Regex(@"^(?<name>.*)\\in\s*(?<hom>\\Hom.*)$");
+        static private readonly Regex _inSet = new Regex(@"^(.*)\\in\s*(.*)$");
 
         /// <summary>
         /// name: 射の数式
@@ -64,7 +64,7 @@ namespace CheckTikZDiagram
             Source = source;
             Target = target;
 
-            if ((type == MorphismType.Functor || type == MorphismType.OneMorphism)
+            if (type == MorphismType.OneMorphism
                 && (source.IsCategory() || target.IsCategory()))
             {
                 if (source.Contains(@"\times"))
@@ -144,7 +144,7 @@ namespace CheckTikZDiagram
         /// <returns></returns>
         public static IEnumerable<Morphism> Create(string text, int defLine = -1)
         {
-            foreach (var (math, source, target, arrow) in CreateMainNormal(text).Concat(CreateMainHom(text)))
+            foreach (var (math, source, target, arrow) in CreateMainNormal(text).Concat(CreateMainInSet(text)))
             {
                 // 射の名前ではs変数, t変数は使用不可
                 if (!math.GetVariables().Any(x => x.EndsWith('s') || x.EndsWith('t')))
@@ -200,34 +200,49 @@ namespace CheckTikZDiagram
         }
 
 
-        private static IEnumerable<(MathObject, MathObject, MathObject, MorphismType)> CreateMainHom(string text)
+        private static IEnumerable<(MathObject, MathObject, MathObject, MorphismType)> CreateMainInSet(string text)
         {
-            var h = _homSet.Match(text);
+            var h = _inSet.Match(text);
             if (!h.Success)
             {
                 yield break;
             }
 
-            // Hom本体を確認
-            // h.Groups[2].Value は\Hom以降の文字列(\Homを含む)
-            // hom.Sequence[0]: \Homと添え字のMathObject
-            // hom.Sequence[1]: \Homより後ろのMathObject
-            var math = new MathObjectFactory(h.Groups[2].Value).CreateSingle();
-
-            if (!(math is MathSequence hom) || hom.Length != 2 || !hom.List[0].Main.Equals("\\Hom"))
+            foreach (var set in new MathObjectFactory(h.Groups[2].Value).Create())
             {
-                yield break;
-            }
+                if (set is MathSequence math)
+                {
+                    if (math.Length == 2
+                        && math.List[0].Main.Equals("\\Hom")
+                        && math.List[1] is MathSequence homMain
+                        && homMain.Length == 2
+                        && homMain.Separator == ",")
+                    {
+                        foreach (var item in new MathObjectFactory(h.Groups[1].Value).Create())
+                        {
+                            yield return (item, homMain.List[0], homMain.List[1], MorphismType.OneMorphism);
+                        }
+                    }
+                    else if (math.Sup != null)
+                    {
+                        foreach (var item in new MathObjectFactory(h.Groups[1].Value).Create())
+                        {
+                            yield return (item, math.Sup, math.CopyWithoutSup(), MorphismType.OneMorphism);
+                        }
+                    }
+                    else if (math.List.Count > 0
+                          && math.List.Last() is MathSequence last
+                          && last.Sup != null)
+                    {
+                        var list = new List<MathObject>(math.List.Take(math.List.Count - 1));
+                        list.Add(last.CopyWithoutSup());
+                        foreach (var item in new MathObjectFactory(h.Groups[1].Value).Create())
+                        {
+                            yield return (item, last.Sup, new MathSequence(list), MorphismType.OneMorphism);
+                        }
 
-            // Homの括弧内を確認
-            if (!(hom.List[1] is MathSequence homMain) || homMain.Length != 2 || homMain.Separator != ",")
-            {
-                yield break;
-            }
-
-            foreach (var item in new MathObjectFactory(h.Groups[1].Value).Create())
-            {
-                yield return (item, homMain.List[0], homMain.List[1], MorphismType.OneMorphism);
+                    }
+                }
             }
         }
 
@@ -281,7 +296,9 @@ namespace CheckTikZDiagram
             }
         }
 
-        public override string ToString()
+        public override string ToString() => ToString(0, 0);
+
+        public string ToString(int m, int n)
         {
             var s = this.Source.OriginalText.IsNullOrEmpty() ? this.Source.ToString() : this.Source.OriginalText.Trim();
             var t = this.Target.OriginalText.IsNullOrEmpty() ? this.Target.ToString() : this.Target.OriginalText.Trim();
@@ -290,11 +307,11 @@ namespace CheckTikZDiagram
             {
                 if (this._defLine > 0)
                 {
-                    return $"{this.Name.OriginalText.Trim()}: {s} → {t} ({this._defLine}行目)";
+                    return $"{this.Name.OriginalText.Trim()}: {new string(' ', m)}{s} → {new string(' ', n)}{t} ({this._defLine}行目)";
                 }
                 else
                 {
-                    return $"{this.Name.OriginalText.Trim()}: {s} → {t}";
+                    return $"{this.Name.OriginalText.Trim()}: {new string(' ', m)}{s} → {new string(' ', n)}{t}";
                 }
             }
             else
@@ -302,7 +319,7 @@ namespace CheckTikZDiagram
                 var list = this._defMorphismList.Distinct()
                     .Select(x => x.ToString());
                 var text = string.Join(" | ", list);
-                return $"{this.Name.OriginalText.Trim()}: {s} → {t} [ {text} ]";
+                return $"{this.Name.OriginalText.Trim()}: {new string(' ', m)}{s} → {new string(' ', n)}{t} [ {text} ]";
             }
         }
     }

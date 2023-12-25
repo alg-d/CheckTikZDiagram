@@ -14,9 +14,9 @@ namespace CheckTikZDiagram
     {
         /// <summary>
         /// arrow: drawの後の [] の中身
-        /// source: 最初の () の中身
+        /// source: 最初の () の中身 (anchorは除く)
         /// math: nodeの後の {$$} の中身
-        /// target: 最後の () の中身
+        /// target: 最後の () の中身 (anchorは除く)
         /// </summary>
         public static Regex Construct { get; set; } = new Regex(Config.Instance.TikZArrowRegex);
 
@@ -72,8 +72,8 @@ namespace CheckTikZDiagram
                 && !m.Groups["math"].Value.IsNullOrWhiteSpace())
             {
                 var math = m.Groups["math"].Value;
-                var source = m.Groups["source"].Value;
-                var target = m.Groups["target"].Value;
+                var source = RemoveAnchor(m.Groups["source"].Value);
+                var target = RemoveAnchor(m.Groups["target"].Value);
 
                 foreach (var item in new MathObjectFactory(math).Create())
                 {
@@ -86,6 +86,24 @@ namespace CheckTikZDiagram
                         yield return new TikZArrow(item, source, target);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// node名からanchorやangleを除く
+        /// </summary>
+        /// <param name="nodeName"></param>
+        /// <returns></returns>
+        private static string RemoveAnchor(string nodeName)
+        {
+            var i = nodeName.IndexOf('.');
+            if (i >= 0)
+            {
+                return nodeName.Substring(0, i);
+            }
+            else
+            {
+                return nodeName;
             }
         }
 

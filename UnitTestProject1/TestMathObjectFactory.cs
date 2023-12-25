@@ -54,9 +54,21 @@ namespace UnitTestProject1
             math.List.Count.Is(2);
             math.List[0].IsMathToken("F");
             math.List[1].IsMathToken(@"\theta");
+            math.Sup.IsNull();
+            math.Sub.IsNull();
             math.Main.TestString(@"F\theta");
             math.ToTokenString().TestString(@"F\theta");
             math.OriginalText.Is(@"F\theta");
+
+            math = CreateSingleSequence(@"\Diagonal a");
+            math.List.Count.Is(2);
+            math.List[0].IsMathToken(@"\Diagonal");
+            math.List[1].IsMathToken("a");
+            math.Sup.IsNull();
+            math.Sub.IsNull();
+            math.Main.TestString(@"\Diagonal a");
+            math.ToTokenString().TestString(@"\Diagonal a");
+            math.OriginalText.Is(@"\Diagonal a");
 
             math = CreateSingleSequence(@"\cat{C}");
             math.List.Count.Is(2);
@@ -66,6 +78,8 @@ namespace UnitTestProject1
             math.List[1].AsMathSequence().LeftBracket.TestToken("{");
             math.List[1].AsMathSequence().RightBracket.TestToken("}");
             math.List[1].ToTokenString().TestString("{C}");
+            math.Sup.IsNull();
+            math.Sub.IsNull();
             math.Main.TestString(@"\cat{C}");
             math.ToTokenString().TestString(@"\cat{C}");
             math.OriginalText.Is(@"\cat{C}");
@@ -83,6 +97,8 @@ namespace UnitTestProject1
             math.List[4].AsMathSequence().List[0].IsMathToken("D");
             math.List[4].AsMathSequence().LeftBracket.TestToken("{");
             math.List[4].AsMathSequence().RightBracket.TestToken("}");
+            math.Sup.IsNull();
+            math.Sub.IsNull();
             math.Main.TestString(@"\encat{C}\otimes\encat{D}");
             math.ToTokenString().TestString(@"\encat{C}\otimes\encat{D}");
             math.OriginalText.Is(@"\encat{C}\otimes\encat{D}");
@@ -91,28 +107,14 @@ namespace UnitTestProject1
         [TestMethod]
         public void スペース()
         {
-            var math = CreateSingleSequence(@"F\,\downarrow\,G");
+            var math = CreateSingleSequence(@"A BC");
             math.List.Count.Is(3);
-            math.List[0].IsMathToken("F");
-            math.List[1].IsMathToken("\\downarrow");
-            math.List[2].IsMathToken("G");
-            math.Main.TestString(@"F\downarrow G");
-            math.ToTokenString().TestString(@"F\downarrow G");
-            math.OriginalText.Is(@"F\,\downarrow\,G");
-
-            math = CreateSingleSequence(@"A B");
-            math.List.Count.Is(2);
             math.List[0].IsMathToken("A");
             math.List[1].IsMathToken("B");
-            math.Main.TestString("AB");
-            math.ToTokenString().TestString("AB");
-
-            math = CreateSingleSequence(@"A\ B");
-            math.List.Count.Is(2);
-            math.List[0].IsMathToken("A");
-            math.List[1].IsMathToken("B");
-            math.Main.TestString("AB");
-            math.ToTokenString().TestString("AB");
+            math.List[2].IsMathToken("C");
+            math.Main.TestString("ABC");
+            math.ToTokenString().TestString("ABC");
+            math.OriginalText.Is(@"A BC");
 
             math = CreateSingleSequence(@"\cat { C }");
             math.List.Count.Is(2);
@@ -125,6 +127,63 @@ namespace UnitTestProject1
             math.Main.TestString(@"\cat{C}");
             math.ToTokenString().TestString(@"\cat{C}");
             math.OriginalText.Is(@"\cat { C }");
+
+            math = CreateSingleSequence(@" U V W ");
+            math.List.Count.Is(3);
+            math.List[0].IsMathToken("U");
+            math.List[1].IsMathToken("V");
+            math.List[2].IsMathToken("W");
+            math.Main.TestString("UVW");
+            math.ToTokenString().TestString("U V W");
+            math.OriginalText.Is(@"U V W");
+        }
+
+        [TestMethod]
+        public void 無視するコマンド()
+        {
+            var math = CreateSingleSequence(@"F\,\downarrow\,G");
+            math.List.Count.Is(3);
+            math.List[0].IsMathToken("F");
+            math.List[1].IsMathToken("\\downarrow");
+            math.List[2].IsMathToken("G");
+            math.Main.TestString(@"F\downarrow G");
+            math.ToTokenString().TestString(@"F\downarrow G");
+            math.OriginalText.Is(@"F\,\downarrow\,G");
+
+            math = CreateSingleSequence(@"A\ BC");
+            math.List.Count.Is(3);
+            math.List[0].IsMathToken("A");
+            math.List[1].IsMathToken("B");
+            math.Main.TestString("ABC");
+            math.ToTokenString().TestString("ABC");
+            math.OriginalText.Is(@"A\ BC");
+
+            math = CreateSingleSequence(@"AX\quad B");
+            math.List.Count.Is(3);
+            math.List[0].IsMathToken("A");
+            math.List[1].IsMathToken("X");
+            math.List[2].IsMathToken("B");
+            math.Main.TestString("AXB");
+            math.ToTokenString().TestString("AXB");
+            math.OriginalText.Is(@"AX\quad B");
+
+            math = CreateSingleSequence(@"UVW\qquad");
+            math.List.Count.Is(3);
+            math.List[0].IsMathToken("U");
+            math.List[1].IsMathToken("V");
+            math.List[2].IsMathToken("W");
+            math.Main.TestString("UVW");
+            math.ToTokenString().TestString("UVW");
+            math.OriginalText.Is(@"UVW");
+
+            math = CreateSingleSequence(@"\displaystyle XYZ");
+            math.List.Count.Is(3);
+            math.List[0].IsMathToken("X");
+            math.List[1].IsMathToken("Y");
+            math.List[2].IsMathToken("Z");
+            math.Main.TestString("XYZ");
+            math.ToTokenString().TestString("XYZ");
+            math.OriginalText.Is(@"XYZ");
         }
 
         [TestMethod]
@@ -558,6 +617,33 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
+        public void 添え字が空()
+        {
+            var token = new MathObjectFactory("p_{}").Create().TestSingle();
+            token.IsMathToken("p");
+            token.ToTokenString().TestString("p");
+            token.OriginalText.Is("p");
+
+            var seq = CreateSingleSequence(@"\cat{C}_{}");
+            seq.List.Count.Is(2);
+            seq.List[0].IsMathToken(@"\cat");
+            seq.List[1].AsMathSequence().List.Count.Is(1);
+            seq.List[1].AsMathSequence().List[0].IsMathToken("C");
+            seq.List[1].AsMathSequence().LeftBracket.TestToken("{");
+            seq.List[1].AsMathSequence().RightBracket.TestToken("}");
+            seq.List[1].ToTokenString().TestString("{C}");
+            seq.Sup.IsNull();
+            seq.Sub.IsNull();
+            seq.Main.TestString(@"\cat{C}");
+            seq.ToTokenString().TestString(@"\cat{C}");
+
+            token = new MathObjectFactory(@"p_{\mathstrut}").Create().TestSingle();
+            token.IsMathToken("p");
+            token.ToTokenString().TestString("p");
+            token.OriginalText.Is("p");
+        }
+
+            [TestMethod]
         public void 括弧()
         {
             var math = CreateSingleSequence("F(f)");
@@ -763,7 +849,6 @@ namespace UnitTestProject1
         private MathSequence CreateSingleSequence(string text)
         {
             var math = new MathObjectFactory(text).Create().TestSingleMath();
-            math.OriginalText.Is(text);
             return math;
         }
     }
