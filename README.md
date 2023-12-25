@@ -1,6 +1,6 @@
 # CheckTikZDiagram
 TikZの図式を検証するためのツールです。
-(.NET Core 3.1を使用したWindowsアプリケーション)
+(.NET 7.0を使用したWindowsアプリケーション)
 
 ## 使い方
 ![ツールの画面イメージ](http://alg-d.com/CheckTikZDiagram00.png)
@@ -100,3 +100,66 @@ $F\colon \Set \rightarrow \Ab$を関手，$f\colon a\rightarrow b$，$g\colon b\
 
 ### 関手を対象に適用したときの計算
 (いつか書く)
+
+### コメント内での射の定義
+本文に書かれていない射がいきなり図式に出てくるような場合、コメントを使って射の定義を書くことができます。
+やり方は、TeXのコメント内に CheckTikZDiagram と書くと、その行の後ろが射の定義として認識されます。
+```
+\begin{document}
+$f\colon a\rightarrow b$，$g\colon a\rightarrow c$を$C$の射とする．
+このとき次の点線の射が取れる．
+%CheckTikZDiagram $h\colon b\rightarrow c$
+\[\begin{tikzpicture}[auto]
+\node (a) at (0, 1) {$b$}; \node (c) at (1, 1) {$c$};
+\node (b) at (0, 0) {$a$};
+\draw[->] (a) -- node[swap] {$\scriptstyle f$} (b);
+\draw[->] (a) -- node {$\scriptstyle g$} (c);
+\draw[->,densely dashed] (b) -- node[swap] {$\scriptstyle h$} (c);
+\end{tikzpicture}\]
+\end{document}
+```
+
+### tikzpicture環境内でのコメント
+tikzpicture環境内で、行末にコメントでCheckTikZDiagramIgnoreと書くと、その行は無視されます。
+例えば次の場合、本来はkがエラーとなりますが、このエラーは無視されます。
+```
+\begin{document}
+$f\colon a\rightarrow b$，$g\colon b\rightarrow c$，$h\colon a\rightarrow c$を圏$C$の射とする．
+\[\begin{tikzpicture}[auto]
+\node (a) at (0, 0) {$a$}; \node (b) at (1, 1) {$b$}; \node (c) at (2, 0) {$c$};
+\draw[->] (a) -- node {$\scriptstyle f$} (b);
+\draw[->] (b) -- node {$\scriptstyle g$} (c);
+\draw[->] (a) -- node[swap] {$\scriptstyle k$} (c); %CheckTikZDiagramIgnore
+\end{tikzpicture}\]
+\end{document}
+```
+次のようにtikzpicture環境の最初の行にCheckTikZDiagramIgnoreを描いた場合は、その環境全体が無視されます。
+```
+\begin{document}
+$f\colon a\rightarrow b$，$g\colon b\rightarrow c$，$h\colon a\rightarrow c$を圏$C$の射とする．
+\[\begin{tikzpicture}[auto] %CheckTikZDiagramIgnore
+\node (a) at (0, 0) {$a$}; \node (b) at (1, 1) {$b$}; \node (c) at (2, 0) {$c$};
+\draw[->] (a) -- node {$\scriptstyle f$} (b);
+\draw[->] (b) -- node {$\scriptstyle g$} (c);
+\draw[->] (a) -- node[swap] {$\scriptstyle k$} (c);
+\end{tikzpicture}\]
+\end{document}
+```
+tikzpicture環境内にCheckTikZDiagramDefinitionと書くと、その環境内の射は定義として採用されます。
+```
+\begin{document}
+次の図式を考える．
+\[\begin{tikzpicture}[auto] %CheckTikZDiagramDefinition
+\node (a) at (0, 0) {$a$}; \node (b) at (1, 1) {$b$}; \node (c) at (2, 0) {$c$};
+\draw[->] (a) -- node {$\scriptstyle f$} (b);
+\draw[->] (b) -- node {$\scriptstyle g$} (c);
+\end{tikzpicture}\]
+このとき次のような$h\colon a\rightarrow c$が存在する．
+\[\begin{tikzpicture}[auto]
+\node (a) at (0, 0) {$a$}; \node (b) at (1, 1) {$b$}; \node (c) at (2, 0) {$c$};
+\draw[->] (a) -- node {$\scriptstyle f$} (b);
+\draw[->] (b) -- node {$\scriptstyle g$} (c);
+\draw[->,densely dashed] (a) -- node[swap] {$\scriptstyle h$} (c);
+\end{tikzpicture}\]
+\end{document}
+```
