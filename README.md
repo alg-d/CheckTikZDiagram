@@ -80,6 +80,18 @@ $F\colon \Set \rightarrow \Ab$を関手，$f\colon a\rightarrow b$，$g\colon b\
 このとき図式中に現れる Ff は射 Fa → Fb とみなされます。
 よって上記の.texファイルは正しいと判断されます。
 
+### Homの元
+Homや関手圏から元を取った場合、それも射として扱われます。
+```
+\begin{document}
+$f\in\Hom_C(Fa, Gb)$とする．
+\[\begin{tikzpicture}[auto]
+\node (a) at (0, 0) {$Fa$}; \node (b) at (1, 0) {$Gb$};
+\draw[->] (a) -- node {$\scriptstyle f$} (b);
+\end{tikzpicture}\]
+\end{document}
+```
+
 ### 逆射
 (いつか書く)
 
@@ -93,9 +105,6 @@ $F\colon \Set \rightarrow \Ab$を関手，$f\colon a\rightarrow b$，$g\colon b\
 (いつか書く)
 
 ### Kan拡張・Kanリフト
-(いつか書く)
-
-### パラメーター付きの射
 (いつか書く)
 
 ### 関手を対象に適用したときの計算
@@ -160,6 +169,24 @@ tikzpicture環境内にCheckTikZDiagramDefinitionと書くと、その環境内�
 \draw[->] (a) -- node {$\scriptstyle f$} (b);
 \draw[->] (b) -- node {$\scriptstyle g$} (c);
 \draw[->,densely dashed] (a) -- node[swap] {$\scriptstyle h$} (c);
+\end{tikzpicture}\]
+\end{document}
+```
+
+### パラメーター付きの射
+射を書く際に#1, #2, …, #9を使うと、その部分はパラメーターとして扱われます。
+勿論これを普通に書いてしまうと、PDF上に意味不明な記述が載ってしまうため、
+これは基本的にはコメント内に上記のCheckTikZDiagramを使用して記述します。
+(書き方は設定2タブ内のパラメーター付きの射も参照)
+```
+\begin{document}
+$a\in C$に対して$f_a\colon a\rightarrow K(a)$を$D$の射とする．
+%CheckTikZDiagram $f_{#1}\colon #1\rightarrow K(#1)$
+\[\begin{tikzpicture}[auto]
+\node (a) at (0, 1) {$a$}; \node (x) at (1, 1) {$K(a)$};
+\node (b) at (0, 0) {$b$}; \node (y) at (1, 0) {$K(b)$};
+\draw[->] (a) -- node {$\scriptstyle f_a$} (x);
+\draw[->] (b) -- node {$\scriptstyle f_b$} (y);
 \end{tikzpicture}\]
 \end{document}
 ```
