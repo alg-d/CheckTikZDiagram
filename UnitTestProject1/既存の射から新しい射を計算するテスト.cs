@@ -7,10 +7,10 @@ using System.Collections.Generic;
 namespace UnitTestProject1
 {
     [TestClass]
-    public class 既存の射から新しい射を作るテスト
+    public class 既存の射から新しい射を計算するテスト
     {
         [TestMethod]
-        public void MorphismDef()
+        public void 射の定義から読み取るだけ()
         {
             var dic = new Dictionary<TokenString, Morphism>()
             {
@@ -25,7 +25,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphism逆射()
+        public void 逆射の計算()
         {
             var dic = new Dictionary<TokenString, Morphism>()
             {
@@ -52,7 +52,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphism恒等射()
+        public void 恒等射の計算()
         {
             var dic = new Dictionary<TokenString, Morphism>();
             var tikz = CreateTikZDiagram(dic);
@@ -77,11 +77,11 @@ namespace UnitTestProject1
 
             tikz.CreateMorphism(@"\id").Count().Is(0);
 
-            tikz.CreateMorphism(@"\id", "a", "b").Count().Is(1);
+            tikz.CreateMorphism(@"\id", "a", "b").Count().Is(2);
         }
 
         [TestMethod]
-        public void Morphism射の合成()
+        public void 射の合成を計算()
         {
             var dic = new Dictionary<TokenString, Morphism>()
             {
@@ -120,7 +120,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphism自然変換の添え字()
+        public void 自然変換に添え字が付いている場合()
         {
             var mor1 = ToMorphismHelp(@"\theta", "F", "G", MorphismType.NaturalTransformation);
             var mor2 = ToMorphismHelp(@"\theta_{k}", "u", "v", MorphismType.OneMorphism);
@@ -160,7 +160,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphism自然変換の添え字2()
+        public void 自然変換の添え字_2変数関手()
         {
             var mor1 = ToMorphismHelp(@"\theta", "T", "S", MorphismType.NaturalTransformation);
             var mor2 = ToMorphismHelp(@"T", @"\cat{C}\times\cat{D}", @"\Set", MorphismType.Bifunctor);
@@ -188,7 +188,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphism関手適用()
+        public void 関手適用の計算()
         {
             var nat = ToMorphismHelp(@"\theta", "F", "G", MorphismType.NaturalTransformation);
 
@@ -218,7 +218,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphism関手適用_2変数関手1()
+        public void 関手適用_2変数関手1()
         {
             var dic = new Dictionary<TokenString, Morphism>()
             {
@@ -245,7 +245,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphism関手適用_2変数関手2()
+        public void 関手適用_2変数関手2()
         {
             var dic = new Dictionary<TokenString, Morphism>()
             {
@@ -272,7 +272,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphism二項演算()
+        public void 二項演算の計算()
         {
             var mor1 = ToMorphismHelp(@"f", "a", "b", MorphismType.OneMorphism);
             var mor2 = ToMorphismHelp(@"g", "s", "t", MorphismType.OneMorphism);
@@ -328,7 +328,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphism二項演算_省略()
+        public void 二項演算を省略した場合の計算()
         {
             var mor1 = ToMorphismHelp(@"f", "a", "b", MorphismType.OneMorphism);
             var mor2 = ToMorphismHelp(@"g", "s", "t", MorphismType.OneMorphism);
@@ -374,7 +374,199 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Morphismハイフン()
+        public void 変数付き射()
+        {
+            var mor = ToMorphismHelp(@"\test{#1}", "F(#1)", "G(#1)", MorphismType.OneMorphism);
+
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = new List<Morphism>()
+            {
+                mor,
+            };
+            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, Array.Empty<Functor>());
+
+            tikz.CreateMorphism(@"\test a")
+                .TestMorphism(@"\test a", "F(a)", "G(a)", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism(@"\test{x}")
+                .TestMorphism(@"\test{x}", "F(x)", "G(x)", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism(@"\test{x^i_j}")
+                .TestMorphism(@"\test{x^i_j}", "F(x^i_j)", "G(x^i_j)", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism(@"\test{\alpha\beta}")
+                .TestMorphism(@"\test{\alpha\beta}", @"F(\alpha\beta)", @"G(\alpha\beta)", MorphismType.OneMorphism);
+        }
+
+        [TestMethod]
+        public void 変数付き射_2変数()
+        {
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = new List<Morphism>()
+            {
+                Morphism.Create(@"m_{#1#2} \colon \encat{A}(#1, #2) \rightarrow \encat{B}(G#1, G#2)").TestSingle()
+            };
+            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, Array.Empty<Functor>());
+
+            tikz.CreateMorphism(@"m_{ab}")
+                .TestMorphism(@"m_{ab}", @"\encat{A}(a, b)", @"\encat{B}(Ga, Gb)", MorphismType.Functor);
+
+            tikz.CreateMorphism(@"m_{ab}", @"\encat{A}(a, b)", @"\encat{B}(Ga, Gb)")
+                .TestMorphism(@"m_{ab}", @"\encat{A}(a, b)", @"\encat{B}(Ga, Gb)", MorphismType.Functor, true);
+
+            tikz.CreateMorphism(@"m_{{Fa}{Fb}}")
+                .TestMorphism(@"m_{{Fa}{Fb}}", @"\encat{A}(Fa, Fb)", @"\encat{B}(GFa, GFb)", MorphismType.Functor);
+
+            tikz.CreateMorphism(@"m_{{Fa}{Fb}}", @"\encat{A}(Fa, Fb)", @"\encat{B}(GFa, GFb)")
+                .TestMorphism(@"m_{{Fa}{Fb}}", @"\encat{A}(Fa, Fb)", @"\encat{B}(GFa, GFb)", MorphismType.Functor, true);
+        }
+
+        [TestMethod]
+        public void 変数付き射_3変数()
+        {
+            var mor = ToMorphismHelp(@"M^{#1#2#3}", @"\bicat{B}(#2, #3)\times\bicat{B}(#1, #2)", @"\bicat{B}(#1, #3)", MorphismType.Bifunctor);
+
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = new List<Morphism>()
+            {
+                mor,
+            };
+            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, Array.Empty<Functor>());
+
+            tikz.CreateMorphism(@"M^{abc}")
+                .TestMorphism(@"M^{abc}", @"\bicat{B}(b, c)\times\bicat{B}(a, b)", @"\bicat{B}(a, c)", MorphismType.Bifunctor);
+
+            tikz.CreateMorphism(@"M^{abc}", @"\bicat{B}(b, c)\times\bicat{B}(a, b)", @"\bicat{B}(a, c)")
+                .TestMorphism(@"M^{abc}", @"\bicat{B}(b, c)\times\bicat{B}(a, b)", @"\bicat{B}(a, c)", MorphismType.Bifunctor, true);
+
+            tikz.CreateMorphism(@"M^{ace}")
+                .TestMorphism(@"M^{ace}", @"\bicat{B}(c, e)\times\bicat{B}(a, c)", @"\bicat{B}(a, e)", MorphismType.Bifunctor);
+
+            tikz.CreateMorphism(@"M^{abb}")
+                .TestMorphism(@"M^{abb}", @"\bicat{B}(b, b)\times\bicat{B}(a, b)", @"\bicat{B}(a, b)", MorphismType.Bifunctor);
+
+            tikz.CreateMorphism(@"M^{Fa, Fb, Fc}")
+                .TestMorphism(@"M^{Fa, Fb, Fc}", @"\bicat{B}(Fb, Fc)\times\bicat{B}(Fa, Fb)", @"\bicat{B}(Fa, Fc)", MorphismType.Bifunctor);
+        }
+
+        [TestMethod]
+        public void 変数付き射_括弧付き()
+        {
+            var mor = ToMorphismHelp(@"(\mu_{#1})_{#2}", @"T(#2, #1)", @"\colim T(-, #1)", MorphismType.OneMorphism);
+
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = new List<Morphism>()
+            {
+                mor,
+            };
+            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, Array.Empty<Functor>());
+
+            tikz.CreateMorphism(@"(\mu_{j_0})_{i_1}")
+                .TestMorphism(@"(\mu_{j_0})_{i_1}", @"T(i_1, j_0)", @"\colim T(-, j_0)", MorphismType.OneMorphism);
+        }
+
+        [TestMethod]
+        public void 変数付き射_domとcodのみにある変数()
+        {
+            var mor = ToMorphismHelp(@"M^{#1#2#3}", @"\bicat{#4}(#2, #3)\times\bicat{#4}(#1, #2)", @"\bicat{#4}(#1, #3)", MorphismType.Bifunctor);
+
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = new List<Morphism>()
+            {
+                mor,
+            };
+            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, Array.Empty<Functor>());
+
+            tikz.CreateMorphism(@"M^{abc}", @"\bicat{B}(b, c)\times\bicat{B}(a, b)", @"\bicat{B}(a, c)")
+                .TestMorphism(@"M^{abc}", @"\bicat{B}(b, c)\times\bicat{B}(a, b)", @"\bicat{B}(a, c)", MorphismType.Bifunctor, true);
+
+            tikz.CreateMorphism(@"M^{ace}", @"\bicat{B}(c, e)\times\bicat{B}(a, c)", @"\bicat{B}(a, e)")
+                .TestMorphism(@"M^{ace}", @"\bicat{B}(c, e)\times\bicat{B}(a, c)", @"\bicat{B}(a, e)", MorphismType.Bifunctor, true);
+
+            tikz.CreateMorphism(@"M^{abb}", @"\bicat{B}(b, b)\times\bicat{B}(a, b)", @"\bicat{B}(a, b)")
+                .TestMorphism(@"M^{abb}", @"\bicat{B}(b, b)\times\bicat{B}(a, b)", @"\bicat{B}(a, b)", MorphismType.Bifunctor, true);
+
+            tikz.CreateMorphism(@"M^{Fa, Fb, Fc}", @"\bicat{C}(Fb, Fc)\times\bicat{C}(Fa, Fb)", @"\bicat{C}(Fa, Fc)")
+                .TestMorphism(@"M^{Fa, Fb, Fc}", @"\bicat{C}(Fb, Fc)\times\bicat{C}(Fa, Fb)", @"\bicat{C}(Fa, Fc)", MorphismType.Bifunctor, true);
+        }
+
+        [TestMethod]
+        public void 変数付き射_ab変数()
+        {
+            var dic = new Dictionary<TokenString, Morphism>();
+            var list = new List<Morphism>()
+            {
+                ToMorphismHelp(@"\ev", @"[#1a, #2]\otimes #1b", @"#2", MorphismType.OneMorphism)
+            };
+            var func = ExtensionsInTest.CreateDefaultFunctors();
+            func.Add(Functor.Create("F#1", "G#1"));
+            func.Add(Functor.Create("X", "Y"));
+            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, func);
+
+            tikz.CreateMorphism(@"\ev", @"[u, v]\otimes u", @"v")
+                .TestMorphism(@"\ev", @"[u, v]\otimes u", @"v", MorphismType.OneMorphism, true);
+
+            tikz.CreateMorphism(@"\ev", @"[X, v]\otimes Y", @"v")
+                .TestMorphism(@"\ev", @"[X, v]\otimes Y", @"v", MorphismType.OneMorphism, true);
+
+            tikz.CreateMorphism(@"\ev", @"[Fu, v]\otimes Gu", @"v")
+                .TestMorphism(@"\ev", @"[Fu, v]\otimes Gu", @"v", MorphismType.OneMorphism, true);
+        }
+
+        [TestMethod]
+        public void 変数付き射_st変数()
+        {
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { "F".ToTokenString(), Morphism.Create(@"F\colon\encat{A}\rightarrow\encat{B}").TestSingle() }
+            };
+            var list = new List<Morphism>()
+            {
+                ToMorphismHelp(@"#1_{#2#3}", @"#1s(#2, #3)", @"#1t(#1#2, #1#3)", MorphismType.OneMorphism)
+            };
+            var func = ExtensionsInTest.CreateDefaultFunctors();
+
+            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, func);
+
+            tikz.CreateMorphism(@"F_{ab}")
+                .TestMorphism(@"F_{ab}", @"\encat{A}(a, b)", @"\encat{B}(Fa, Fb)", MorphismType.Functor);
+
+            tikz.CreateMorphism(@"F_{ab}", @"\encat{A}(a, b)", @"\encat{B}(Fa, Fb)")
+                .TestMorphism(@"F_{ab}", @"\encat{A}(a, b)", @"\encat{B}(Fa, Fb)", MorphismType.Functor, true);
+        }
+
+        [TestMethod]
+        public void 変数付き射_st変数と添え字()
+        {
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { "f_j".ToTokenString(), Morphism.Create(@"f_j\colon F(j)\rightarrow G(j)").TestSingle() },
+                { "g_j".ToTokenString(), Morphism.Create(@"g_j\colon a_j\rightarrow b_j").TestSingle() },
+            };
+            var list = new List<Morphism>()
+            {
+                ToMorphismHelp(@"K(#1)", @"K(#1s)", @"K(#1t)", MorphismType.OneMorphism),
+                ToMorphismHelp(@"\test{#1}", @"#1s", @"\tester{#1}", MorphismType.OneMorphism),
+            };
+            var func = ExtensionsInTest.CreateDefaultFunctors();
+
+            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, func);
+
+            tikz.CreateMorphism(@"K(f_j)")
+                .TestMorphism(@"K(f_j)", @"K(F(j))", @"K(G(j))", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism(@"K(f_j)", @"K(F(j))", @"K(G(j))")
+                .TestMorphism(@"K(f_j)", @"K(F(j))", @"K(G(j))", MorphismType.OneMorphism, true);
+
+            tikz.CreateMorphism(@"\test{g_j}")
+                .TestMorphism(@"\test{g_j}", @"a_j", @"\tester{g_j}", MorphismType.OneMorphism);
+
+            tikz.CreateMorphism(@"\test{g_j}", @"a_j", @"\tester{g_j}")
+                .TestMorphism(@"\test{g_j}", @"a_j", @"\tester{g_j}", MorphismType.OneMorphism, true);
+        }
+
+        [TestMethod]
+        public void 変数付き射_ハイフン変数()
         {
             var mor1 = ToMorphismHelp(@"\Hom(x, -)", @"\cat{C}", @"\Set", MorphismType.Functor);
             var mor2 = ToMorphismHelp(@"\Hom_{\cat{D}}(-, x)", @"\cat{D}", @"\Set", MorphismType.ContravariantFunctor);
@@ -415,168 +607,6 @@ namespace UnitTestProject1
 
             mor = tikz.CreateMorphism(@"u\otimes f", @"u\otimes a", @"u\otimes b");
             mor.TestMorphism(@"u\otimes f", @"u\otimes a", @"u\otimes b", MorphismType.OneMorphism, true);
-        }
-
-        [TestMethod]
-        public void 変数1()
-        {
-            var mor = ToMorphismHelp(@"\test{#1}", "F(#1)", "G(#1)", MorphismType.OneMorphism);
-
-            var dic = new Dictionary<TokenString, Morphism>();
-            var list = new List<Morphism>()
-            {
-                mor,
-            };
-            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, Array.Empty<Functor>());
-
-            tikz.CreateMorphism(@"\test a")
-                .TestMorphism(@"\test a", "F(a)", "G(a)", MorphismType.OneMorphism);
-
-            tikz.CreateMorphism(@"\test{x}")
-                .TestMorphism(@"\test{x}", "F(x)", "G(x)", MorphismType.OneMorphism);
-
-            tikz.CreateMorphism(@"\test{x^i_j}")
-                .TestMorphism(@"\test{x^i_j}", "F(x^i_j)", "G(x^i_j)", MorphismType.OneMorphism);
-
-            tikz.CreateMorphism(@"\test{\alpha\beta}")
-                .TestMorphism(@"\test{\alpha\beta}", @"F(\alpha\beta)", @"G(\alpha\beta)", MorphismType.OneMorphism);
-        }
-
-        [TestMethod]
-        public void 変数2()
-        {
-            var dic = new Dictionary<TokenString, Morphism>();
-            var list = new List<Morphism>()
-            {
-                Morphism.Create(@"m_{#1#2} \colon \encat{A}(#1, #2) \rightarrow \encat{B}(G#1, G#2)").TestSingle()
-            };
-            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, Array.Empty<Functor>());
-
-            tikz.CreateMorphism(@"m_{ab}")
-                .TestMorphism(@"m_{ab}", @"\encat{A}(a, b)", @"\encat{B}(Ga, Gb)", MorphismType.Functor);
-
-            tikz.CreateMorphism(@"m_{ab}", @"\encat{A}(a, b)", @"\encat{B}(Ga, Gb)")
-                .TestMorphism(@"m_{ab}", @"\encat{A}(a, b)", @"\encat{B}(Ga, Gb)", MorphismType.Functor, true);
-
-            tikz.CreateMorphism(@"m_{{Fa}{Fb}}")
-                .TestMorphism(@"m_{{Fa}{Fb}}", @"\encat{A}(Fa, Fb)", @"\encat{B}(GFa, GFb)", MorphismType.Functor);
-
-            tikz.CreateMorphism(@"m_{{Fa}{Fb}}", @"\encat{A}(Fa, Fb)", @"\encat{B}(GFa, GFb)")
-                .TestMorphism(@"m_{{Fa}{Fb}}", @"\encat{A}(Fa, Fb)", @"\encat{B}(GFa, GFb)", MorphismType.Functor, true);
-        }
-
-        [TestMethod]
-        public void 変数3()
-        {
-            var mor = ToMorphismHelp(@"M^{#1#2#3}", @"\bicat{B}(#2, #3)\times\bicat{B}(#1, #2)", @"\bicat{B}(#1, #3)", MorphismType.Bifunctor);
-
-            var dic = new Dictionary<TokenString, Morphism>();
-            var list = new List<Morphism>()
-            {
-                mor,
-            };
-            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, Array.Empty<Functor>());
-
-            tikz.CreateMorphism(@"M^{abc}")
-                .TestMorphism(@"M^{abc}", @"\bicat{B}(b, c)\times\bicat{B}(a, b)", @"\bicat{B}(a, c)", MorphismType.Bifunctor);
-
-            tikz.CreateMorphism(@"M^{abc}", @"\bicat{B}(b, c)\times\bicat{B}(a, b)", @"\bicat{B}(a, c)")
-                .TestMorphism(@"M^{abc}", @"\bicat{B}(b, c)\times\bicat{B}(a, b)", @"\bicat{B}(a, c)", MorphismType.Bifunctor, true);
-
-            tikz.CreateMorphism(@"M^{ace}")
-                .TestMorphism(@"M^{ace}", @"\bicat{B}(c, e)\times\bicat{B}(a, c)", @"\bicat{B}(a, e)", MorphismType.Bifunctor);
-
-            tikz.CreateMorphism(@"M^{abb}")
-                .TestMorphism(@"M^{abb}", @"\bicat{B}(b, b)\times\bicat{B}(a, b)", @"\bicat{B}(a, b)", MorphismType.Bifunctor);
-
-            tikz.CreateMorphism(@"M^{Fa, Fb, Fc}")
-                .TestMorphism(@"M^{Fa, Fb, Fc}", @"\bicat{B}(Fb, Fc)\times\bicat{B}(Fa, Fb)", @"\bicat{B}(Fa, Fc)", MorphismType.Bifunctor);
-        }
-
-        [TestMethod]
-        public void 変数4()
-        {
-            var mor = ToMorphismHelp(@"(\mu_{#1})_{#2}", @"T(#2, #1)", @"\colim T(-, #1)", MorphismType.OneMorphism);
-
-            var dic = new Dictionary<TokenString, Morphism>();
-            var list = new List<Morphism>()
-            {
-                mor,
-            };
-            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, Array.Empty<Functor>());
-
-            tikz.CreateMorphism(@"(\mu_{j_0})_{i_1}")
-                .TestMorphism(@"(\mu_{j_0})_{i_1}", @"T(i_1, j_0)", @"\colim T(-, j_0)", MorphismType.OneMorphism);
-        }
-
-        [TestMethod]
-        public void 変数dom_codのみにある変数()
-        {
-            var mor = ToMorphismHelp(@"M^{#1#2#3}", @"\bicat{#4}(#2, #3)\times\bicat{#4}(#1, #2)", @"\bicat{#4}(#1, #3)", MorphismType.Bifunctor);
-
-            var dic = new Dictionary<TokenString, Morphism>();
-            var list = new List<Morphism>()
-            {
-                mor,
-            };
-            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, Array.Empty<Functor>());
-
-            tikz.CreateMorphism(@"M^{abc}", @"\bicat{B}(b, c)\times\bicat{B}(a, b)", @"\bicat{B}(a, c)")
-                .TestMorphism(@"M^{abc}", @"\bicat{B}(b, c)\times\bicat{B}(a, b)", @"\bicat{B}(a, c)", MorphismType.Bifunctor, true);
-
-            tikz.CreateMorphism(@"M^{ace}", @"\bicat{B}(c, e)\times\bicat{B}(a, c)", @"\bicat{B}(a, e)")
-                .TestMorphism(@"M^{ace}", @"\bicat{B}(c, e)\times\bicat{B}(a, c)", @"\bicat{B}(a, e)", MorphismType.Bifunctor, true);
-
-            tikz.CreateMorphism(@"M^{abb}", @"\bicat{B}(b, b)\times\bicat{B}(a, b)", @"\bicat{B}(a, b)")
-                .TestMorphism(@"M^{abb}", @"\bicat{B}(b, b)\times\bicat{B}(a, b)", @"\bicat{B}(a, b)", MorphismType.Bifunctor, true);
-
-            tikz.CreateMorphism(@"M^{Fa, Fb, Fc}", @"\bicat{C}(Fb, Fc)\times\bicat{C}(Fa, Fb)", @"\bicat{C}(Fa, Fc)")
-                .TestMorphism(@"M^{Fa, Fb, Fc}", @"\bicat{C}(Fb, Fc)\times\bicat{C}(Fa, Fb)", @"\bicat{C}(Fa, Fc)", MorphismType.Bifunctor, true);
-        }
-
-        [TestMethod]
-        public void 変数ab()
-        {
-            var dic = new Dictionary<TokenString, Morphism>();
-            var list = new List<Morphism>()
-            {
-                ToMorphismHelp(@"\ev", @"[#1a, #2]\otimes #1b", @"#2", MorphismType.OneMorphism)
-            };
-            var func = ExtensionsInTest.CreateDefaultFunctors();
-            func.Add(Functor.Create("F#1", "G#1"));
-            func.Add(Functor.Create("X", "Y"));
-            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, func);
-
-            tikz.CreateMorphism(@"\ev", @"[u, v]\otimes u", @"v")
-                .TestMorphism(@"\ev", @"[u, v]\otimes u", @"v", MorphismType.OneMorphism, true);
-
-            tikz.CreateMorphism(@"\ev", @"[X, v]\otimes Y", @"v")
-                .TestMorphism(@"\ev", @"[X, v]\otimes Y", @"v", MorphismType.OneMorphism, true);
-
-            tikz.CreateMorphism(@"\ev", @"[Fu, v]\otimes Gu", @"v")
-                .TestMorphism(@"\ev", @"[Fu, v]\otimes Gu", @"v", MorphismType.OneMorphism, true);
-        }
-
-        [TestMethod]
-        public void 変数st()
-        {
-            var dic = new Dictionary<TokenString, Morphism>()
-            {
-                { "F".ToTokenString(), Morphism.Create(@"F\colon\encat{A}\rightarrow\encat{B}").TestSingle() }
-            };
-            var list = new List<Morphism>()
-            {
-                ToMorphismHelp(@"#1_{#2#3}", @"#1s(#2, #3)", @"#1t(#1#2, #1#3)", MorphismType.OneMorphism)
-            };
-            var func = ExtensionsInTest.CreateDefaultFunctors();
-
-            var tikz = new TikZDiagram("", -1, false, false, true, dic, list, func);
-
-            tikz.CreateMorphism(@"F_{ab}")
-                .TestMorphism(@"F_{ab}", @"\encat{A}(a, b)", @"\encat{B}(Fa, Fb)", MorphismType.Functor);
-
-            tikz.CreateMorphism(@"F_{ab}", @"\encat{A}(a, b)", @"\encat{B}(Fa, Fb)")
-                .TestMorphism(@"F_{ab}", @"\encat{A}(a, b)", @"\encat{B}(Fa, Fb)", MorphismType.Functor, true);
         }
 
         [TestMethod]
@@ -845,7 +875,7 @@ namespace UnitTestProject1
 
             tikz.CreateMorphism(@"\yoneda").Count().Is(0);
 
-            tikz.CreateMorphism(@"\yoneda", @"\cat{C}", @"\widehat{\cat{D}}").Count().Is(1);
+            tikz.CreateMorphism(@"\yoneda", @"\cat{C}", @"\widehat{\cat{D}}").Count().Is(3);
 
             tikz.CreateMorphism(@"\Lan{F}\yoneda", null, @"\widehat{\cat{C}}")
                 .TestMorphism(@"\Lan{F}\yoneda", @"\cat{D}", @"\widehat{\cat{C}}", MorphismType.Functor);

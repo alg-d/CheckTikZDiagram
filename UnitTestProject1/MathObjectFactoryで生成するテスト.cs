@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace UnitTestProject1
 {
     [TestClass]
-    public class TestMathObjectFactory
+    public class MathObjectFactoryで生成するテスト
     {
         [TestMethod]
         public void 通常()

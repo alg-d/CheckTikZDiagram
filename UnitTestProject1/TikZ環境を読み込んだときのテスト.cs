@@ -1156,6 +1156,33 @@ node
         }
 
         [TestMethod]
+        public void Homへの写像()
+        {
+            var tex = @"
+\node (a) at (0, 2) {$a$}; \node (x) at (1, 2) {$Gb$};
+\node (b) at (0, 1) {$a$}; \node (y) at (1, 1) {$Rb$};
+\node (c) at (0, 0) {$u$}; \node (z) at (1, 0) {$Gv$};
+\draw[->] (a) -- node {$\scriptstyle \phi(f)$} (x);
+\draw[->] (b) -- node {$\scriptstyle \psi_{ab}(k)$} (y);
+\draw[->] (c) -- node {$\scriptstyle \theta_{uv}(g)$} (z);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { @"\phi".ToTokenString(), Morphism.Create(@"\phi\colon\Hom_{\cat{D}}(Fa, b)\rightarrow\Hom_{\cat{C}}(a, Gb)").Single() },
+                { @"\psi_{ab}".ToTokenString(), Morphism.Create(@"\psi_{ab}\colon\Hom_{\cat{D}}(La, b)\rightarrow\Hom_{\cat{C}}(a, Rb)").Single() },
+            };
+            var list = new List<Morphism>
+            {
+                Morphism.Create(@"\theta_{#1#2}\colon\Hom_{\cat{D}}(F#1, #2)\rightarrow\Hom_{\cat{C}}(#1, G#2)").TestSingle(),
+            };
+            new TikZDiagram(tex, -1, false, false, true, dic, list, ExtensionsInTest.CreateDefaultFunctors())
+                .CheckDiagram()
+                .TestError();
+        }
+
+        [TestMethod]
         public void TEST1()
         {
             var tex = @"

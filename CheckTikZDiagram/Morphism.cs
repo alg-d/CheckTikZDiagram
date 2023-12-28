@@ -210,37 +210,11 @@ namespace CheckTikZDiagram
 
             foreach (var set in new MathObjectFactory(h.Groups[2].Value).Create())
             {
-                if (set is MathSequence math)
+                if (set.TryGetSourceAndTargetAsHom(out var source, out var target))
                 {
-                    if (math.Length == 2
-                        && math.List[0].Main.Equals("\\Hom")
-                        && math.List[1] is MathSequence homMain
-                        && homMain.Length == 2
-                        && homMain.Separator == ",")
+                    foreach (var item in new MathObjectFactory(h.Groups[1].Value).Create())
                     {
-                        foreach (var item in new MathObjectFactory(h.Groups[1].Value).Create())
-                        {
-                            yield return (item, homMain.List[0], homMain.List[1], MorphismType.OneMorphism);
-                        }
-                    }
-                    else if (math.Sup != null)
-                    {
-                        foreach (var item in new MathObjectFactory(h.Groups[1].Value).Create())
-                        {
-                            yield return (item, math.Sup, math.CopyWithoutSup(), MorphismType.OneMorphism);
-                        }
-                    }
-                    else if (math.List.Count > 0
-                          && math.List.Last() is MathSequence last
-                          && last.Sup != null)
-                    {
-                        var list = new List<MathObject>(math.List.Take(math.List.Count - 1));
-                        list.Add(last.CopyWithoutSup());
-                        foreach (var item in new MathObjectFactory(h.Groups[1].Value).Create())
-                        {
-                            yield return (item, last.Sup, new MathSequence(list), MorphismType.OneMorphism);
-                        }
-
+                        yield return (item, source, target, MorphismType.OneMorphism);
                     }
                 }
             }
@@ -267,10 +241,10 @@ namespace CheckTikZDiagram
             }
         }
 
-        public IEnumerable<Morphism> ApplyParameter(MathObject math, IReadOnlyDictionary<string, MathObject> parameters, IEnumerable<Morphism> defList)
+        public IEnumerable<Morphism> ApplyParameter(MathObject math, IReadOnlyDictionary<string, MathObject> parameters, bool setNull, IEnumerable<Morphism> defList)
         {
-            var sources = this.Source.ApplyParameters(parameters, true);
-            var targets = this.Target.ApplyParameters(parameters, true);
+            var sources = this.Source.ApplyParameters(parameters, setNull);
+            var targets = this.Target.ApplyParameters(parameters, setNull);
 
             foreach (var s in sources)
             {

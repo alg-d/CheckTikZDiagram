@@ -21,11 +21,13 @@ namespace CheckTikZDiagram
         private readonly StringBuilder _commentTemp = new(); // 現在読み込んでいるコメント
         private bool _commentFlag; // コメントのときtrue
         private bool _mathFlag; // 数式環境のときtrue
-        private bool _tikzFlag; // tikzpicture環境のときtrue
+        private bool _tikzpictureFlag; // tikzpicture環境のときtrue
+        private bool _tikzcommandFlag; // tikzコマンドのときtrue
         private bool _texCommandFlag;
         private bool _tikzDefinitionFlag; // CheckTikZDiagramDefinitionコメントのあるtikzpicture環境のときtrue (tikzpictureを定義として使用する)
         private bool _tikzOmitFlag; // CheckTikZDiagramOmitコメントのあるtikzpicture環境のときtrue (演算子の省略を認める)
         private int _line;
+        private int _bracketCount;
 
         public event Action<CheckResult>? OutputEvent;
 
@@ -53,10 +55,11 @@ namespace CheckTikZDiagram
 
             _commentFlag = false;
             _mathFlag = false;
-            _tikzFlag = false;
+            _tikzpictureFlag = false;
             _texCommandFlag = false;
             _tikzOmitFlag = false;
             _line = 1;
+            _bracketCount = 0;
 
             // 「\\」は削除
             text = text.Replace(@"\\", " ");
@@ -80,9 +83,13 @@ namespace CheckTikZDiagram
                 {
                     MathMode(x);
                 }
-                else if (_tikzFlag)
+                else if (_tikzpictureFlag)
                 {
-                    TikZMode(x);
+                    TikZPictureMode(x);
+                }
+                else if (_tikzcommandFlag)
+                {
+                    TikZCommandMode(x);
                 }
                 else if (_texCommandFlag)
                 {
@@ -99,7 +106,8 @@ namespace CheckTikZDiagram
         {
             // _commentFlag == true
             // _mathFlag == true or false
-            // _tikzFlag == true or false
+            // _tikzpictureFlag == true or false
+            // _tikzcommandFlag == true or false
             // _texCommandFlag == false
             // _tikzDefinitionFlag == true or false
             // _tikzOmitFlag == true or false
@@ -113,7 +121,7 @@ namespace CheckTikZDiagram
                 return;
             }
 
-            if (_tikzFlag)
+            if (_tikzpictureFlag || _tikzcommandFlag)
             {
                 if (x == 'n' && _commentTemp.ToString().EndsWith("CheckTikZDiagramDefinitio"))
                 {
@@ -151,13 +159,15 @@ namespace CheckTikZDiagram
         {
             // _commentFlag == false
             // _mathFlag == true
-            // _tikzFlag == false
+            // _tikzpictureFlag == false
+            // _tikzcommandFlag == false
             // _texCommandFlag == false
             // _tikzDefinitionFlag == true or false
             // _tikzOmitFlag == false
             if (_commentFlag) throw new InvalidOperationException("_commentFlag == false でないのにMathModeに来るのはおかしい");
             if (!_mathFlag) throw new InvalidOperationException("_mathFlag == true でないのにMathModeに来るのはおかしい");
-            if (_tikzFlag) throw new InvalidOperationException("_tikzFlag == false でないのにMathModeに来るのはおかしい");
+            if (_tikzpictureFlag) throw new InvalidOperationException("_tikzpictureFlag == false でないのにMathModeに来るのはおかしい");
+            if (_tikzcommandFlag) throw new InvalidOperationException("_tikzcommandFlag == false でないのにMathModeに来るのはおかしい");
             if (_texCommandFlag) throw new InvalidOperationException("_texCommandFlag == false でないのにMathModeに来るのはおかしい");
             if (_tikzOmitFlag) throw new InvalidOperationException("_omitFlag == false でないのにMathModeに来るのはおかしい");
 
@@ -201,7 +211,7 @@ namespace CheckTikZDiagram
             {
                 foreach (var mor in Morphism.Create(text, _line))
                 {
-                    if (mor.Name.ToString().Contains("#") || mor.Source.ToString().Contains("#") || mor.Target.ToString().Contains("#"))
+                    if (mor.Name.ToString().Contains('#') || mor.Source.ToString().Contains('#') || mor.Target.ToString().Contains('#'))
                     {
                         // #が含まれる場合はパラメーター付き射として扱う
                         _parameterizedMorphisms.Add(mor);
@@ -243,19 +253,21 @@ namespace CheckTikZDiagram
         /// tikzpicture環境を読むための処理
         /// </summary>
         /// <param name="x"></param>
-        private void TikZMode(char x)
+        private void TikZPictureMode(char x)
         {
             // _commentFlag == false
             // _mathFlag == false
-            // _tikzFlag == true
+            // _tikzpictureFlag == true
+            // _tikzcommandFlag == false
             // _texCommandFlag == false
             // _tikzDefinitionFlag == true or false
             // _tikzIgnoreFlag == true or false
             // _tikzOmitFlag == true or false
-            if (_commentFlag) throw new InvalidOperationException("_commentFlag == false でないのにTikZModeに来るのはおかしい");
-            if (_mathFlag) throw new InvalidOperationException("_mathFlag == false でないのにTikZModeに来るのはおかしい");
-            if (!_tikzFlag) throw new InvalidOperationException("_tikzFlag == true でないのにTikZModeに来るのはおかしい");
-            if (_texCommandFlag) throw new InvalidOperationException("_texCommandFlag == false でないのにTikZModeに来るのはおかしい");
+            if (_commentFlag) throw new InvalidOperationException("_commentFlag == false でないのにTikZPictureModeに来るのはおかしい");
+            if (_mathFlag) throw new InvalidOperationException("_mathFlag == false でないのにTikZPictureModeに来るのはおかしい");
+            if (!_tikzpictureFlag) throw new InvalidOperationException("_tikzpictureFlag == true でないのにTikZPictureModeに来るのはおかしい");
+            if (_tikzcommandFlag) throw new InvalidOperationException("_tikzcommandFlag == false でないのにTikZPictureModeに来るのはおかしい");
+            if (_texCommandFlag) throw new InvalidOperationException("_texCommandFlag == false でないのにTikZPictureModeに来るのはおかしい");
 
             if (x == '}')
             {
@@ -273,7 +285,7 @@ namespace CheckTikZDiagram
                         OutputResult(new CheckResult(_line, $"tikzpicture環境 {_textTemp} が不正です。{ex.Message}", true, true));
                     }
 
-                    _tikzFlag = false;
+                    _tikzpictureFlag = false;
                     _tikzDefinitionFlag = false;
                     _tikzOmitFlag = false;
                     return;
@@ -289,17 +301,85 @@ namespace CheckTikZDiagram
             _textTemp.Append(x);
         }
 
+
+        /// <summary>
+        /// tikzコマンドを読むための処理
+        /// </summary>
+        /// <param name="x"></param>
+        private void TikZCommandMode(char x)
+        {
+            // _commentFlag == false
+            // _mathFlag == false
+            // _tikzpictureFlag == false
+            // _tikzcommandFlag == true
+            // _texCommandFlag == false
+            // _tikzDefinitionFlag == true or false
+            // _tikzIgnoreFlag == true or false
+            // _tikzOmitFlag == true or false
+            if (_commentFlag) throw new InvalidOperationException("_commentFlag == false でないのにTikZCommandModeに来るのはおかしい");
+            if (_mathFlag) throw new InvalidOperationException("_mathFlag == false でないのにTikZCommandModeに来るのはおかしい");
+            if (_tikzpictureFlag) throw new InvalidOperationException("_tikzpictureFlag == false でないのにTikZCommandModeに来るのはおかしい");
+            if (!_tikzcommandFlag) throw new InvalidOperationException("_tikzcommandFlag == true でないのにTikZCommandModeに来るのはおかしい");
+            if (_texCommandFlag) throw new InvalidOperationException("_texCommandFlag == false でないのにTikZCommandModeに来るのはおかしい");
+
+            if (x == '{')
+            {
+                _bracketCount++;
+                _textTemp.Append(x);
+            }
+            else if (x == '}')
+            {
+                _bracketCount--;
+                _textTemp.Append(x);
+
+                if (_bracketCount == 0)
+                {
+                    try
+                    {
+                        new TikZDiagram(_textTemp.ToString(), _line, _tikzDefinitionFlag, _tikzOmitFlag, ErrorOnly,
+                           _definedMorphismDictionary, _parameterizedMorphisms, _functors)
+                           .CheckDiagram()
+                           .ForEach(x => OutputResult(x));
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        OutputResult(new CheckResult(_line, $"tikzpicture環境 {_textTemp} が不正です。{ex.Message}", true, true));
+                    }
+
+                    _tikzcommandFlag = false;
+                    _tikzDefinitionFlag = false;
+                    _tikzOmitFlag = false;
+                    return;
+                }
+            }
+            else if (x == '%')
+            {
+                _commentFlag = true;
+                _commentTemp.Clear();
+            }
+            else
+            {
+                _textTemp.Append(x);
+            }
+        }
+
+        /// <summary>
+        /// TeXコマンドを読み込む処理
+        /// </summary>
+        /// <param name="x"></param>
         private void TexCommandMode(char x)
         {
             // _commentFlag == false
             // _mathFlag == false
-            // _tikzFlag == false
+            // _tikzpictureFlag == false
+            // _tikzcommandFlag == false
             // _texCommandFlag == true
             // _tikzDefinitionFlag == false
             // _tikzOmitFlag == false
             if (_commentFlag) throw new InvalidOperationException("_commentFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (_mathFlag) throw new InvalidOperationException("_mathFlag == false でないのにTexCommandModeに来るのはおかしい");
-            if (_tikzFlag) throw new InvalidOperationException("_tikzFlag == false でないのにTexCommandModeに来るのはおかしい");
+            if (_tikzpictureFlag) throw new InvalidOperationException("_tikzpictureFlag == false でないのにTexCommandModeに来るのはおかしい");
+            if (_tikzcommandFlag) throw new InvalidOperationException("_tikzcommandFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (!_texCommandFlag) throw new InvalidOperationException("_texCommandFlag == true でないのにTexCommandModeに来るのはおかしい");
             if (_tikzDefinitionFlag) throw new InvalidOperationException("_definitionFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (_tikzOmitFlag) throw new InvalidOperationException("_omitFlag == false でないのにTexCommandModeに来るのはおかしい");
@@ -332,24 +412,38 @@ namespace CheckTikZDiagram
             // 制御綴 2文字目以降
             else
             {
-                if (('a' <= x && x <= 'z') || ('A' <= x && x <= 'Z') || x == '{' || x == '}')
-                {
-                    _texCommandTemp.Append(x);
-                    return;
-                }
-
                 // 制御綴終了
-                if (_texCommandTemp.ToString() == @"\begin{tikzpicture}")
+                var command = _texCommandTemp.ToString();
+                if (command == @"\begin{tikzpicture}")
                 {
-                    _tikzFlag = true;
+                    _tikzpictureFlag = true;
                     _textTemp.Clear();
                     _textTemp.Append(x);
 
                     _texCommandFlag = false;
                     return;
                 }
+                else if (command == @"\tikz")
+                {
+                    _tikzcommandFlag = true;
+                    _textTemp.Clear();
+                    _textTemp.Append(x);
+                    _bracketCount = 0;
 
-                if (x == '\\')
+                    if (x == '{')
+                    {
+                        _bracketCount++;
+                    }
+
+                    _texCommandFlag = false;
+                    return;
+                }
+
+                if (('a' <= x && x <= 'z') || ('A' <= x && x <= 'Z') || x == '{' || x == '}')
+                {
+                    _texCommandTemp.Append(x);
+                }
+                else if (x == '\\')
                 {
                     _texCommandTemp.Clear();
                     _texCommandTemp.Append('\\');
@@ -377,13 +471,14 @@ namespace CheckTikZDiagram
         {
             // _commentFlag == false
             // _mathFlag == false
-            // _tikzFlag == false
+            // _tikzpictureFlag == false
             // _texCommandFlag == false
             // _tikzDefinitionFlag == false
             // _tikzOmitFlag == false
             if (_commentFlag) throw new InvalidOperationException("_commentFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (_mathFlag) throw new InvalidOperationException("_mathFlag == false でないのにTexCommandModeに来るのはおかしい");
-            if (_tikzFlag) throw new InvalidOperationException("_tikzFlag == false でないのにTexCommandModeに来るのはおかしい");
+            if (_tikzpictureFlag) throw new InvalidOperationException("_tikzpictureFlag == false でないのにTexCommandModeに来るのはおかしい");
+            if (_tikzcommandFlag) throw new InvalidOperationException("_tikzcommandFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (_texCommandFlag) throw new InvalidOperationException("_texCommandFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (_tikzDefinitionFlag) throw new InvalidOperationException("_definitionFlag == false でないのにTexCommandModeに来るのはおかしい");
             if (_tikzOmitFlag) throw new InvalidOperationException("_omitFlag == false でないのにTexCommandModeに来るのはおかしい");

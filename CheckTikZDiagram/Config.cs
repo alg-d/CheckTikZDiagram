@@ -34,6 +34,11 @@ namespace CheckTikZDiagram
         public string IdentityMorphism { get; set; } = "";
 
         /// <summary>
+        /// Homを表すTeXコマンド
+        /// </summary>
+        public string Hom { get; set; } = "\\Hom";
+
+        /// <summary>
         /// 恒等関手を表すTeXコマンド
         /// </summary>
         public string IdentityFunctor { get; set; } = "";
@@ -42,6 +47,11 @@ namespace CheckTikZDiagram
         /// 対角関手を表すTeXコマンド
         /// </summary>
         public string Diagonal { get; set; } = "";
+
+        /// <summary>
+        /// 米田埋込を表すTeXコマンド
+        /// </summary>
+        public string Yoneda { get; set; } = "\\yoneda";
 
         /// <summary>
         /// 随伴を表すTeXコマンド

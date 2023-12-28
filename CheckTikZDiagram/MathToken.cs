@@ -68,7 +68,7 @@ namespace CheckTikZDiagram
 
         public override bool IsCategory() => Config.Instance.Categories.Any(x => this.Main.Tokens.Contains(new Token(x, "")));
 
-        public override bool IsSameType(MathObject other, IDictionary<string, MathObject> parameters)
+        public override bool IsSameType(MathObject other, IDictionary<string, MathObject> parameters, Func<MathObject, MathObject, bool>? equalsFunc = null)
         {
             if (this.IsVariable())
             {

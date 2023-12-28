@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace UnitTestProject1
 {
     [TestClass]
-    public class TestMathObject
+    public class MathObjectに対する操作のテスト
     {
         [TestMethod]
         public void Split()
@@ -33,12 +33,14 @@ namespace UnitTestProject1
                 .Split(@"\otimes")
                 .ToArray();
             xs.Length.Is(1);
+            xs[0].ToTokenString().TestString(@"(u\otimes v)^i");
 
             xs = new MathObjectFactory(@"u\otimes v").Create()
                 .TestSingleMath()
                 .Split(@",")
                 .ToArray();
             xs.Length.Is(1);
+            xs[0].ToTokenString().TestString(@"u\otimes v");
 
             xs = new MathObjectFactory(@"(u\otimes v)\otimes w").Create()
                 .TestSingleMath()
@@ -47,6 +49,15 @@ namespace UnitTestProject1
             xs.Length.Is(2);
             xs[0].AsMathSequence().ToTokenString().TestString(@"(u\otimes v)");
             xs[1].IsMathToken("w");
+
+            xs = new MathObjectFactory(@"u\otimes v\otimes w").Create()
+                .TestSingleMath()
+                .Split(@"\otimes")
+                .ToArray();
+            xs.Length.Is(3);
+            xs[0].IsMathToken("u");
+            xs[1].IsMathToken("v");
+            xs[2].IsMathToken("w");
         }
 
         [TestMethod]

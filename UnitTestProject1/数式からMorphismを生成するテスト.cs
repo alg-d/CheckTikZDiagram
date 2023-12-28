@@ -24,6 +24,7 @@ namespace UnitTestProject1
             Morphism.Create(@"\eta_a\colon \id_{\cat{C}}(a)\rightarrow GF(a)").TestSingle()
                 .TestMorphism(@"\eta_a", @"\id_{\cat{C}}(a)", "GF(a)", MorphismType.OneMorphism);
         }
+
         [TestMethod]
         public void 複数の射を生成()
         {
@@ -46,9 +47,6 @@ namespace UnitTestProject1
         [TestMethod]
         public void TwoMorphismの生成()
         {
-            Morphism.Create(@"\theta\colon F\Rightarrow G").TestSingle().TestMorphism(@"\theta", "F", "G", MorphismType.TwoMorphism);
-            Morphism.Create(@"\theta_i\colon Fi\rightarrow Gi").TestSingle().TestMorphism(@"\theta _{i}", "Fi", "Gi", MorphismType.OneMorphism);
-
             Morphism.Create(@"\theta\colon F\Rightarrow G").TestSingle().TestMorphism(@"\theta", "F", "G", MorphismType.TwoMorphism);
             Morphism.Create(@"\Gamma\colon\theta\Rrightarrow\rho").TestSingle().TestMorphism(@"\Gamma", @"\theta", @"\rho", MorphismType.ThreeMorphism);
 

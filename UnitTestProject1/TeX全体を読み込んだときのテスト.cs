@@ -309,6 +309,50 @@ test
         }
 
         [TestMethod]
+        public void 変数付き射()
+        {
+            TestMain(@"\documentclass[uplatex,a4j,12pt,dvipdfmx]{jsarticle}
+\author{algd}
+\title{ああああああああああああああああああ}
+\begin{document}
+テスト
+%CheckTikZDiagram $\fdeflation{#1}\colon #1s\rightarrow \fobject{#1}$
+%CheckTikZDiagram $\finflation{#1}\colon \fobject{#1}\rightarrow #1t$
+%CheckTikZDiagram $f\colon a_k\rightarrow a_{k+1}$ $g\colon a_{k+1}\rightarrow a_{k+2}$
+図式$a_0\xrightarrow{f_0}a_1\xrightarrow{f_1}\cdots\xrightarrow{f_n}a_{n+1}$が完全列(exact sequence)とは，
+$0\leq k\leq n$に対して$f_k$がadmissibleであり，かつ$0\leq k<n$に対して
+\begin{tikzpicture}[auto,x=14mm,baseline=(a.base)]
+\node (a) at (0, 0) {$\fobject{f}$}; \node (b) at (1, 0) {$a_{k+1}$}; \node (c) at (2.2, 0) {$\fobject{g}$};
+\draw[infla] (a) -- node {$\scriptstyle \finflation{f}$} (b);
+\draw[defla] (b) -- node {$\scriptstyle \fdeflation{g}$} (c);
+\end{tikzpicture}
+が短完全列になることをいう．
+\end{document}", 0);
+        }
+
+        [TestMethod]
+        public void 変数付き射2()
+        {
+            TestMain(@"\documentclass[uplatex,a4j,12pt,dvipdfmx]{jsarticle}
+\author{algd}
+\title{ああああああああああああああああああ}
+\begin{document}
+テスト
+%CheckTikZDiagram $\fdeflation{#1}\colon #1s\rightarrow \fobject{#1}$
+%CheckTikZDiagram $\finflation{#1}\colon \fobject{#1}\rightarrow #1t$
+%CheckTikZDiagram $f_k\colon a_k\rightarrow a_{k+1}$ $f_{k+1}\colon a_{k+1}\rightarrow a_{k+2}$
+図式$a_0\xrightarrow{f_0}a_1\xrightarrow{f_1}\cdots\xrightarrow{f_n}a_{n+1}$が完全列(exact sequence)とは，
+$0\leq k\leq n$に対して$f_k$がadmissibleであり，かつ$0\leq k<n$に対して
+\begin{tikzpicture}[auto,x=14mm,baseline=(a.base)]
+\node (a) at (0, 0) {$\fobject{f_k}$}; \node (b) at (1, 0) {$a_{k+1}$}; \node (c) at (2.2, 0) {$\fobject{f_{k+1}}$};
+\draw[infla] (a) -- node {$\scriptstyle \finflation{f_k}$} (b);
+\draw[defla] (b) -- node {$\scriptstyle \fdeflation{f_{k+1}}$} (c);
+\end{tikzpicture}
+が短完全列になることをいう．
+\end{document}", 0);
+        }
+
+        [TestMethod]
         public void Config_TikZNode()
         {
             Config.Instance.TikZNodeRegex = @"\\path node\s*\((?<name>[^)]*)\).*\{\$(?<math>.*)\$\}\s*$";
@@ -378,6 +422,25 @@ test
 \end{document}", 0);
 
             Config.Instance.MorphismRegex = @"^(?<name>.*)\\colon(?<source>.*)\\(?<arrow>[Rr]{1,2})ightarrow(?<target>.*)$";
+        }
+
+        [TestMethod]
+        public void tikzコマンドの場合()
+        {
+            TestMain(@"\documentclass[uplatex,a4j,12pt,dvipdfmx]{jsarticle}
+\author{algd}
+\title{ああああああああああああああああああ}
+\begin{document}
+test
+
+本文あああああああああ　ああああ\\
+あああああああ$f\colon a\rightarrow b$ああああ．
+\[\tikz{[auto]
+\node (a) at (0, 1.2) {$a$}; \node (x) at (1.2, 1.2) {$x$};
+\draw[->] (a) to node {$\scriptstyle f$} (x);
+}\]
+test
+\end{document}", 1);
         }
 
 

@@ -180,7 +180,7 @@ namespace CheckTikZDiagram
         /// <param name="source">domainを表す文字列</param>
         /// <param name="target">codomainを表す文字列</param>
         /// <returns>Morphism: 変換後のMorphismの候補  bool: 与えたsource, targetと一致する射であることが確認済ならtrue</returns>
-        public IEnumerable<(Morphism, bool?)> CreateMorphism(MathObject math, MathObject? source, MathObject? target, [CallerMemberName] string memberName = "")
+        public IEnumerable<(Morphism, bool?)> CreateMorphism(MathObject math, MathObject? source = null, MathObject? target = null, [CallerMemberName] string memberName = "")
         {
             _logCount++;
             var key = (math.ToTokenString(), source?.ToTokenString(), target?.ToTokenString());
@@ -246,7 +246,7 @@ namespace CheckTikZDiagram
             // 定義が_parameterizedMorphismsに含まれる場合
             foreach (var item in Parameterized(math, source, target)) yield return item;
 
-            // MathObjectでない場合はここで終わり
+            // MathSequenceでない場合はここで終わり
             if (math is not MathSequence seq) yield break;
 
             // 射の合成(コマンド)の場合
@@ -295,6 +295,9 @@ namespace CheckTikZDiagram
             foreach (var item in bo) yield return item;
             if (bo.Length > 0) yield break;
 
+            // 写像の適用の場合
+            foreach (var item in ApplyingMap(seq)) yield return (item, null);
+
             // 関手適用の場合
             foreach (var item in ApplyingFunctorToMorphism(seq)) yield return (item, null);
 
@@ -331,7 +334,7 @@ namespace CheckTikZDiagram
             foreach (var def in _parameterizedMorphisms)
             {
                 var parameters = new Dictionary<string, MathObject>();
-                if (!def.Name.IsSameType(math, parameters))
+                if (!def.Name.IsSameType(math, parameters, (left, right) => EqualsAsMathObject(left, right)))
                 {
                     continue;
                 }
@@ -341,113 +344,136 @@ namespace CheckTikZDiagram
                     // appliedが変数を持っていなければOK (この時点でapplied.Nameは変数無し)
                     if (!applied.Source.HasVariables() && !applied.Target.HasVariables())
                     {
-                        WriteLog("Parameterized0 {0}", def);
-                        if (source == null || target == null)
+                        yield return ReturnResult(applied);
+                        continue;
+                    }
+
+                    // 以下持っている場合の処理
+                    // まずApplyStParameterでs変数、t変数の処理をする
+                    foreach (var (withoutSt, defList) in ApplyStParameter(applied, parameters))
+                    {
+                        // withoutStが変数を持っていなければOK
+                        if (!withoutSt.Source.HasVariables() && !withoutSt.Target.HasVariables())
                         {
-                            yield return (applied, null);
+                            yield return ReturnResult(withoutSt);
                             continue;
                         }
-                        else
+
+                        // source, targetの情報を使って変数を埋める
+                        var p = new Dictionary<string, MathObject>();
+                        if (source != null && !withoutSt.Source.IsSameType(source, p, (left, right) => EqualsAsMathObject(left, right)))
                         {
-                            yield return (applied, CheckSourceAndTarget(applied, source, target));
+                            yield return (withoutSt, false);
                             continue;
                         }
-                    }
 
-                    // 持っている場合、source, targetの情報を使って変数を埋める
-                    var p = new Dictionary<string, MathObject>();
-                    if (source != null && !applied.Source.IsSameType(source, p))
-                    {
-                        yield return (applied, false);
-                        continue;
-                    }
-                    
-                    var q = new Dictionary<string, MathObject>();
-                    if (target != null && !applied.Target.IsSameType(target, q))
-                    {
-                        yield return (applied, false);
-                        continue;
-                    }
-
-                    // p, qに矛盾がないか確認
-                    if (!CheckParameter(p))
-                    {
-                        yield return (applied, false);
-                        continue;
-                    }
-
-                    if (!CheckParameter(q))
-                    {
-                        yield return (applied, false);
-                        continue;
-                    }
-
-                    foreach (var key in p.Keys.Where(x => !x.EndsWith('s') && !x.EndsWith('t')))
-                    {
-                        if (q.ContainsKey(key))
+                        var q = new Dictionary<string, MathObject>();
+                        if (target != null && !withoutSt.Target.IsSameType(target, q, (left, right) => EqualsAsMathObject(left, right)))
                         {
-                            // pとqが矛盾している場合は無効
-                            if (!EqualsAsMathObject(q[key], p[key]))
+                            yield return (withoutSt, false);
+                            continue;
+                        }
+
+                        // p, qに矛盾がないか確認
+                        if (!CheckParameter(p))
+                        {
+                            yield return (withoutSt, false);
+                            continue;
+                        }
+
+                        if (!CheckParameter(q))
+                        {
+                            yield return (withoutSt, false);
+                            continue;
+                        }
+
+                        foreach (var key in p.Keys.Where(x => !x.EndsWith('s') && !x.EndsWith('t')))
+                        {
+                            if (q.ContainsKey(key))
                             {
-                                yield return (applied, false);
-                                goto NEXT_APPLIED;
+                                // pとqが矛盾している場合は無効
+                                if (!EqualsAsMathObject(q[key], p[key]))
+                                {
+                                    yield return (withoutSt, false);
+                                    continue;
+                                    //goto NEXT_APPLIED;
+                                }
+                            }
+                            else
+                            {
+                                // pのみにある情報をqに集約する
+                                q[key] = p[key];
                             }
                         }
-                        else
+
+
+                        foreach (var mor in withoutSt.ApplyParameter(math, q, true, defList))
                         {
-                            // pのみにある情報をqに集約する
-                            q[key] = p[key];
+                            if (!mor.Source.GetVariables().Any() && !mor.Target.GetVariables().Any())
+                            {
+                                yield return ReturnResult(mor);
+                            }
                         }
                     }
 
-                    // s変数、t変数
-                    var array = applied.Source.GetVariables().Concat(applied.Target.GetVariables())
+                //NEXT_APPLIED:;
+                }
+            }
+
+            IEnumerable<(Morphism, IEnumerable<Morphism>)> ApplyStParameter(Morphism applied, Dictionary<string, MathObject> parameters)
+            {
+                var stVariables = applied.Source.GetVariables().Concat(applied.Target.GetVariables())
                         .Where(x => x.EndsWith('s') || x.EndsWith('t'))
                         .Select(x => x.Substring(0, 2))
                         .Distinct()
                         .ToArray();
-                    var paramDic = new Dictionary<string, MathObject>();
-                    foreach (var paramName in array)
+
+                // st変数が無い場合は終了
+                if (stVariables.Length == 0)
+                {
+                    yield return (applied, Array.Empty<Morphism>());
+                    yield break;
+                }
+
+                var paramDic = new Dictionary<string, MathObject>();
+                foreach (var paramName in stVariables)
+                {
+                    if (!parameters.TryGetValue(paramName, out var value))
                     {
-                        if (!parameters.TryGetValue(paramName, out var value))
-                        {
-                            yield return (applied, false);
-                            goto NEXT_APPLIED;
-                        }
-                        paramDic[paramName] = value;
+                        yield return (applied, Array.Empty<Morphism>());
+                        yield break;
+                    }
+                    paramDic[paramName] = value;
+                }
+
+                foreach (var morParam in AggregateParameters(paramDic, x => CreateMorphism(x).Select(y => y.Item1)))
+                {
+                    // s変数、t変数がない場合はmorParamは空の辞書
+                    var stParam = new Dictionary<string, MathObject>();
+                    var defList = new List<Morphism>();
+                    foreach (var kvp in morParam)
+                    {
+                        stParam[$"{kvp.Key}s"] = kvp.Value.Source;
+                        stParam[$"{kvp.Key}t"] = kvp.Value.Target;
+                        defList.AddRange(kvp.Value.GetDefList());
                     }
 
-                    foreach (var morParam in AggregateParameters(paramDic, x => CreateMorphism(x, null, null).Select(y => y.Item1)))
+                    foreach (var mor in applied.ApplyParameter(math, stParam, false, defList))
                     {
-                        // s変数、t変数がない場合はmorParamは空の辞書
-                        var stParam = new Dictionary<string, MathObject>(q);
-                        var defList = new List<Morphism>();
-                        foreach (var kvp in morParam)
-                        {
-                            stParam[kvp.Key + "s"] = kvp.Value.Source;
-                            stParam[kvp.Key + "t"] = kvp.Value.Target;
-                            defList.AddRange(kvp.Value.GetDefList());
-                        }
-
-                        foreach (var mor in applied.ApplyParameter(math, stParam, defList))
-                        {
-                            if (!mor.Source.GetVariables().Any() && !mor.Target.GetVariables().Any())
-                            {
-                                WriteLog("Parameterized1 {0}", def);
-                                if (source != null && target != null)
-                                {
-                                    yield return (mor, CheckSourceAndTarget(mor, source, target));
-                                }
-                                else
-                                {
-                                    yield return (mor, null);
-                                }
-                            }
-                        }
+                        yield return (mor, defList);
                     }
+                }
+            }
 
-
-                NEXT_APPLIED:;
+            (Morphism, bool?) ReturnResult(Morphism morphism)
+            {
+                if (source != null && target != null)
+                {
+                    return (morphism, CheckSourceAndTarget(morphism, source, target));
+                }
+                else
+                {
+                    return (morphism, null);
                 }
             }
         }
@@ -628,31 +654,37 @@ namespace CheckTikZDiagram
                                                                          || x.Item1.Type == MorphismType.TwoMorphism))
             {
                 // 添え字に関手がついている場合
-                foreach (var (sub, _) in CreateMorphism(seq.Sub, sValue, tValue).Where(x => x.Item1.IsFunctor))
+                foreach (var (sub, _) in CreateMorphism(seq.Sub, sValue, tValue))
                 {
-                    WriteLog("CWithIndex 関手 {0}, {1}", mor, sub);
-                    yield return (new Morphism(
-                            seq,
-                            mor.Source.Add(sub.Source),
-                            mor.Target.Add(sub.Target),
-                            mor.Type,
-                            mor.GetDefList().Concat(sub.GetDefList())
-                    ), null);
+                    if (sub.IsFunctor)
+                    {
+                        WriteLog("CWithIndex 関手 {0}, {1}", mor, sub);
+                        yield return (new Morphism(
+                                seq,
+                                mor.Source.Add(sub.Source),
+                                mor.Target.Add(sub.Target),
+                                mor.Type,
+                                mor.GetDefList().Concat(sub.GetDefList())
+                        ), null);
+                    }
                 }
 
                 // 2変数の場合
                 if (seq.Sub is MathSequence subSeq && subSeq.List.Count == 2)
                 {
-                    foreach (var (f, _) in CreateMorphism(mor.Source, null, null).Where(x => x.Item1.Type == MorphismType.Bifunctor))
+                    foreach (var (f, _) in CreateMorphism(mor.Source))
                     {
-                        WriteLog("CWithIndex 2変数関手 {0}, {1}", mor, f);
-                        yield return (new Morphism(
-                            seq,
-                            EvaluateBifunctor(mor.Source, subSeq.List[0], subSeq.List[1]),
-                            EvaluateBifunctor(mor.Target, subSeq.List[0], subSeq.List[1]),
-                            MorphismType.OneMorphism,
-                            mor.GetDefList().Concat(f.GetDefList())
-                        ), null);
+                        if (f.Type == MorphismType.Bifunctor)
+                        {
+                            WriteLog("CWithIndex 2変数関手 {0}, {1}", mor, f);
+                            yield return (new Morphism(
+                                seq,
+                                EvaluateBifunctor(mor.Source, subSeq.List[0], subSeq.List[1]),
+                                EvaluateBifunctor(mor.Target, subSeq.List[0], subSeq.List[1]),
+                                MorphismType.OneMorphism,
+                                mor.GetDefList().Concat(f.GetDefList())
+                            ), null);
+                        }
                     }
                 }
 
@@ -693,6 +725,23 @@ namespace CheckTikZDiagram
         }
 
         /// <summary>
+        /// 写像(codがHom)を適用した場合
+        /// </summary>
+        /// <param name="seq">計算対象のMathSequence</param>
+        /// <returns>計算結果の射の候補</returns>
+        private IEnumerable<Morphism> ApplyingMap(MathSequence seq)
+        {
+            for (int i = 1; i < seq.List.Count; i++)
+            {
+                // 先頭の i 個が写像となっている場合処理
+                foreach (var (source, target, defList) in CheckMapMathObject(seq.SubSequence(0, i)))
+                {
+                    yield return new Morphism(seq, source, target, MorphismType.OneMorphism, defList);
+                }
+            }
+        }
+
+        /// <summary>
         /// 射に対して関手を適用した結果を計算する
         /// </summary>
         /// <param name="seq">計算対象のMathSequence</param>
@@ -702,49 +751,48 @@ namespace CheckTikZDiagram
             for (int i = 1; i < seq.List.Count; i++)
             {
                 // 先頭の i 個が関手となっている場合処理
-                foreach (var (func, _) in CreateMorphism(seq.SubSequence(0, i), null, null)
-                    .Where(x => x.Item1.Type == MorphismType.Functor || x.Item1.Type == MorphismType.ContravariantFunctor))
+                foreach (var (name, defList, type) in CheckFunctorMathObject(seq.SubSequence(0, i)))
                 {
                     // 後ろの残りの部分が関手に適用する値
-                    foreach (var (value, _) in CreateMorphism(seq.SubSequence(i), null, null))
+                    foreach (var (value, _) in CreateMorphism(seq.SubSequence(i)))
                     {
                         // 自然変換(2-mophism)の場合、水平合成する
                         if (value.Type == MorphismType.NaturalTransformation || value.Type == MorphismType.TwoMorphism)
                         {
-                            WriteLog("ApplyingFunctor 水平合成 {0}, {1}", func, value);
+                            WriteLog("ApplyingFunctor 水平合成 {0}, {1}", name, value);
                             yield return new Morphism(
                                 seq,
-                                new MathSequence(new[] { func.Name, value.Source }),
-                                new MathSequence(new[] { func.Name, value.Target }),
+                                new MathSequence(new[] { name, value.Source }),
+                                new MathSequence(new[] { name, value.Target }),
                                 value.Type,
-                                func.GetDefList().Concat(value.GetDefList())
+                                defList.Concat(value.GetDefList())
                             );
                         }
                         // 1-morphismの場合は普通に適用
                         else if (value.Type == MorphismType.OneMorphism)
                         {
                             // 共変関手
-                            if (func.Type == MorphismType.Functor)
+                            if (type == MorphismType.Functor)
                             {
-                                WriteLog("ApplyingFunctorToMorphism 共変関手 {0}, {1}", func, value);
+                                WriteLog("ApplyingFunctorToMorphism 共変関手 {0}, {1}", name, value);
                                 yield return new Morphism(
                                     seq,
-                                    EvaluateFunctor(func.Name, null, value.Source),
-                                    EvaluateFunctor(func.Name, null, value.Target),
+                                    EvaluateFunctor(name, null, value.Source),
+                                    EvaluateFunctor(name, null, value.Target),
                                     MorphismType.OneMorphism,
-                                    func.GetDefList().Concat(value.GetDefList())
+                                    defList.Concat(value.GetDefList())
                                 );
                             }
                             // 反変関手
                             else
                             {
-                                WriteLog("ApplyingFunctorToMorphism 反変関手 {0}, {1}", func, value);
+                                WriteLog("ApplyingFunctorToMorphism 反変関手 {0}, {1}", name, value);
                                 yield return new Morphism(
                                     seq,
-                                    EvaluateFunctor(func.Name, null, value.Target),
-                                    EvaluateFunctor(func.Name, null, value.Source),
+                                    EvaluateFunctor(name, null, value.Target),
+                                    EvaluateFunctor(name, null, value.Source),
                                     MorphismType.OneMorphism,
-                                    func.GetDefList().Concat(value.GetDefList())
+                                    defList.Concat(value.GetDefList())
                                 );
                             }
                         }
@@ -752,12 +800,16 @@ namespace CheckTikZDiagram
                 }
             }
 
-            foreach (var mor in _definedMorphismDictionary.Values
-                .Where(x => (x.Type == MorphismType.Functor || x.Type == MorphismType.ContravariantFunctor)
-                            && x.Name.HasVariables()))
+            foreach (var mor in _definedMorphismDictionary.Values)
             {
+                if ((mor.Type != MorphismType.Functor && mor.Type != MorphismType.ContravariantFunctor)
+                    || !mor.Name.HasVariables())
+                {
+                    continue;
+                }
+
                 var parameters = new Dictionary<string, MathObject>();
-                if (!mor.Name.IsSameType(seq, parameters))
+                if (!mor.Name.IsSameType(seq, parameters, (left, right) => EqualsAsMathObject(left, right)))
                 {
                     continue;
                 }
@@ -767,7 +819,7 @@ namespace CheckTikZDiagram
                     continue;
                 }
 
-                foreach (var (value, _) in CreateMorphism(parameters["-"], null, null))
+                foreach (var (value, _) in CreateMorphism(parameters["-"]))
                 {
                     var sourceParam = new Dictionary<string, MathObject>() { { "-", value.Source } };
                     var targetParam = new Dictionary<string, MathObject>() { { "-", value.Target } };
@@ -851,8 +903,13 @@ namespace CheckTikZDiagram
 
             if (seq.List[1] is MathSequence value && value.List.Count == 2)
             {
-                foreach (var (mor, _) in CreateMorphism(seq.List[0], null, null).Where(x => x.Item1.Type == MorphismType.Bifunctor))
+                foreach (var (mor, _) in CreateMorphism(seq.List[0]))
                 {
+                    if (mor.Type != MorphismType.Bifunctor)
+                    {
+                        continue;
+                    }
+
                     var lArray = CreateMorphism(value.List[0], sLeft, tLeft).Select(x => x.Item1).ToArray();
                     var rArray = CreateMorphism(value.List[1], sRight, tRight).Select(x => x.Item1).ToArray();
 
@@ -1226,8 +1283,7 @@ namespace CheckTikZDiagram
                 if (seq.List.Count > 1)
                 {
                     var first = seq.List[0];
-                    if (CreateMorphism(first, null, null)
-                        .Any(x => x.Item1.Type == MorphismType.Functor || x.Item1.Type == MorphismType.ContravariantFunctor))
+                    if (CheckFunctorMathObject(first).Any())
                     {
                         // 先頭が関手の場合の処理
                         foreach (var value in EvaluateFunctorToObject(seq.SubSequence(1)))
@@ -1317,8 +1373,50 @@ namespace CheckTikZDiagram
             return result;
         }
 
-        private int _logCount = 0;
+        /// <summary>
+        /// MathObjectが関手か確認する
+        /// </summary>
+        /// <param name="math">対象のMathObject</param>
+        /// <returns>MathObject: 関手を表すMathObject　IEnumerable(Morphism): 定義リスト　MorphismType: 関手の種類</returns>
+        private IEnumerable<(MathObject, IEnumerable<Morphism>, MorphismType)> CheckFunctorMathObject(MathObject math)
+        {
+            foreach (var (func, _) in CreateMorphism(math))
+            {
+                if (func.Type == MorphismType.Functor || func.Type == MorphismType.ContravariantFunctor)
+                {
+                    yield return (func.Name, func.GetDefList(), func.Type);
+                }
+            }
 
+            if (math.ToTokenString().Equals(Config.Instance.Diagonal))
+            {
+                yield return (new MathObjectFactory(Config.Instance.Diagonal).CreateSingle(), Array.Empty<Morphism>(), MorphismType.Functor);
+            }
+
+            if (math.ToTokenString().Equals(Config.Instance.Yoneda))
+            {
+                yield return (new MathObjectFactory(Config.Instance.Yoneda).CreateSingle(), Array.Empty<Morphism>(), MorphismType.Functor);
+            }
+        }
+
+        /// <summary>
+        /// MathObjectが写像(codがHom)か確認する
+        /// </summary>
+        /// <param name="math">対象のMathObject</param>
+        /// <returns>MathObject: sourceを表すMathObject　MathObject: targetを表すMathObject　IEnumerable(Morphism): 定義リスト</returns>
+        private IEnumerable<(MathObject, MathObject, IEnumerable<Morphism>)> CheckMapMathObject(MathObject math)
+        {
+            foreach (var (map, _) in CreateMorphism(math))
+            {
+                if (map.Target.TryGetSourceAndTargetAsHom(out var source, out var target))
+                {
+                    yield return (source, target, map.GetDefList());
+                }
+            }
+        }
+
+
+        private int _logCount = 0;
 
         private void WriteLog(string format, int line, TikZArrow arrow)
         {
