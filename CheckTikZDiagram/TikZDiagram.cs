@@ -19,10 +19,16 @@ namespace CheckTikZDiagram
             = new();
 
         /// <summary>
-        /// CheckNodeのキャッシュ
+        /// EqualsAsMathObjectのキャッシュ
         /// </summary>
-        private readonly Dictionary<(TokenString, TokenString), bool> _cacheCheckNode
+        private readonly Dictionary<(TokenString, TokenString), bool> _cacheEqualsAsMathObject
             = new();
+
+        /// <summary>
+        /// EvaluateFunctorToObjectのキャッシュ
+        /// </summary>
+        private readonly Dictionary<TokenString, List<MathObject>> _cacheEvaluateFunctorToObject
+            = new ();
 
         private readonly IDictionary<TokenString, Morphism> _definedMorphismDictionary;
         private readonly ReadOnlyCollection<Morphism> _parameterizedMorphisms;
@@ -135,6 +141,19 @@ namespace CheckTikZDiagram
                 if (!nodeDic.TryGetValue(arrow.TargetNodeName, out var target))
                 {
                     yield return new CheckResult(num, $"{arrow}: codomainのnodeが存在しません", true, true);
+                    continue;
+                }
+
+                if (arrow.MathObject == MathEqualObject.Instance)
+                {
+                    if (EqualsAsMathObject(source.MathObject, target.MathObject))
+                    {
+                        yield return new CheckResult(num, $"[TikZ] 等号: {source} → {target}", false, !_errorOnly);
+                    }
+                    else
+                    {
+                        yield return new CheckResult(num, $"等号のdomainとcodomainが異なります: {source} → {target}", true, true);
+                    }
                     continue;
                 }
 
@@ -1232,18 +1251,18 @@ namespace CheckTikZDiagram
             WriteLog("[{0} ⇒ EqualsAsMathObject] {1}, {2}", memberName, left, right);
 
             // 処理本体(キャッシュに値がある場合はそれを使用する)
-            if (!_cacheCheckNode.ContainsKey(key))
+            if (!_cacheEqualsAsMathObject.ContainsKey(key))
             {
-                _cacheCheckNode[key] = EqualsAsMathObjectMain(left, right);
+                _cacheEqualsAsMathObject[key] = EqualsAsMathObjectMain(left, right);
             }
 
             _logCount--;
-            return _cacheCheckNode[key];
+            return _cacheEqualsAsMathObject[key];
 
 
             bool EqualsAsMathObjectMain(MathObject left, MathObject right)
             {
-                if (left.ToTokenString().Equals(right.ToTokenString()))
+                if (left.Equals(right))
                 {
                     return true;
                 }
@@ -1270,14 +1289,24 @@ namespace CheckTikZDiagram
         /// <returns>適用結果の対象の候補</returns>
         public IEnumerable<MathObject> EvaluateFunctorToObject(MathObject math)
         {
-            yield return math;
+            if (_cacheEvaluateFunctorToObject.ContainsKey(math.ToTokenString()))
+            {
+                foreach (var item in _cacheEvaluateFunctorToObject[math.ToTokenString()])
+                {
+                    yield return item;
+                }
+                yield break;
+            }
+
+            var cache = new List<MathObject>();
+            yield return AddCache(cache, math);
 
             if (math is MathSequence seq)
             {
                 if (seq.Sup == null && seq.Sub == null && seq.ExistsBracket)
                 {
                     // 一番外側が括弧の場合、外す
-                    yield return new MathSequence(seq.List, seq.Separator, seq.Main.ToOriginalString());
+                    yield return AddCache(cache, new MathSequence(seq.List, seq.Separator, seq.Main.ToOriginalString()));
                 }
 
                 if (seq.List.Count > 1)
@@ -1288,8 +1317,8 @@ namespace CheckTikZDiagram
                         // 先頭が関手の場合の処理
                         foreach (var value in EvaluateFunctorToObject(seq.SubSequence(1)))
                         {
-                            yield return first.Add(value);
-                            yield return first.Add(value.SetBracket());
+                            yield return AddCache(cache, first.Add(value));
+                            yield return AddCache(cache, first.Add(value.SetBracket()));
                         }
                     }
                 }
@@ -1316,7 +1345,7 @@ namespace CheckTikZDiagram
                     {
                         foreach (var item in functor.Evaluate(px))
                         {
-                            yield return item;
+                            yield return AddCache(cache, item);
                         }
 
                         var dic = new Dictionary<string, MathObject>();
@@ -1335,10 +1364,19 @@ namespace CheckTikZDiagram
 
                         foreach (var item in functor.Evaluate(dic))
                         {
-                            yield return item;
+                            yield return AddCache(cache, item);
                         }
                     }
                 }
+            }
+
+            _cacheEvaluateFunctorToObject[math.ToTokenString()] = cache;
+
+
+            MathObject AddCache(List<MathObject> list, MathObject x)
+            {
+                list.Add(x);
+                return x;
             }
         }
 

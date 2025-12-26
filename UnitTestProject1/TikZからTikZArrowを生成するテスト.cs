@@ -79,6 +79,19 @@ namespace UnitTestProject1
             xs.Count.Is(2);
             xs[0].TestTikZArrow(@"\Lan{f}g", "a", "b");
             xs[1].TestTikZArrow(@"\Ran{f}g", "a", "b");
+
+            xs = TikZArrow.Create(@"\draw[->] (a) to node {$\scriptstyle \sigma\,\cong\,\tau$} (b)").ToList();
+            xs.Count.Is(2);
+            xs[0].TestTikZArrow(@"\sigma", "a", "b");
+            xs[1].TestTikZArrow(@"\tau", "a", "b");
+        }
+
+        [TestMethod]
+        public void CreateEqualArrow()
+        {
+            TikZArrow.Create(@"\draw[vequal] (a) -- (b)").TestSingle().TestTikZArrowEqual("a", "b");
+            TikZArrow.Create(@"\draw[hequal] (a) -- (x)").TestSingle().TestTikZArrowEqual("a", "x");
+            TikZArrow.Create(@"\draw[nullarray] (u) -- (v)").TestSingle().TestTikZArrowEqual("u", "v");
         }
 
         [TestMethod]

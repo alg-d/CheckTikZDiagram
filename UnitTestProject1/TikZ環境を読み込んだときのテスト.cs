@@ -37,6 +37,30 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
+        public void Checkオプション()
+        {
+            var tex = @"
+\node[anchor=mid] (a) at (0.6, 1.5) {$e$}; \node[anchor=mid] (x) at (2.4, 1.5) {$E(b, f)(e)$};
+\node[anchor=base] (b) at (0, 0) {$a$}; \node[anchor=base] (y) at (1.8, 0) {$a'$};
+\node[anchor=mid] (v) at (3, 0) {$b$}; \node[anchor=mid] (w) at (4.8, 0) {$b$};
+\draw[dsh] (a.mid east) -- node {$\scriptstyle k$} (x.mid west);
+\draw[->] (b.mid east) -- node[swap] {$\scriptstyle f$} (y);
+\draw[->] (v) -- node[swap] {$\scriptstyle g_2$} (w.mid west);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { "k".ToTokenString(), ToMorphismHelp("k", "e", "E(b, f)(e)", MorphismType.OneMorphism) },
+                { "f".ToTokenString(), ToMorphismHelp("f", "a", "a'", MorphismType.OneMorphism) },
+                { "g_2".ToTokenString(), ToMorphismHelp("g_2", "b", "b", MorphismType.OneMorphism) },
+            };
+            CreateTikZDiagram(tex, dic)
+                .CheckDiagram()
+                .TestError();
+        }
+
+        [TestMethod]
         public void Check折れ線()
         {
             var tex = @"
@@ -615,6 +639,55 @@ node
             CreateTikZDiagram(tex, dic)
                 .CheckDiagram()
                 .TestError();
+        }
+
+        [TestMethod]
+        public void Check等号エラーなし()
+        {
+            var tex = @"
+\node (a) at (0, 1) {$a$}; \node (x) at (1, 1) {$u$};
+\node (b) at (0, 0) {$a$}; \node (y) at (1, 0) {$a$};
+\draw[->] (a) -- node {$\scriptstyle f$} (x);
+\draw[->] (x) -- node {$\scriptstyle p$} (y);
+\draw[vequal] (a) -- (b);
+\draw[hequal] (b) -- (y);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { "f".ToTokenString(), ToMorphismHelp("f", "a", "u", MorphismType.OneMorphism) },
+                { "p".ToTokenString(), ToMorphismHelp("p", "u", "a", MorphismType.OneMorphism) },
+            };
+            CreateTikZDiagram(tex, dic)
+                .CheckDiagram()
+                .TestError();
+        }
+
+        [TestMethod]
+        public void Check等号エラーあり()
+        {
+            var tex = @"
+\node (a) at (0, 1) {$a$}; \node (x) at (1, 1) {$u$};
+\node (b) at (0, 0) {$a$}; \node (y) at (1, 0) {$c$};
+\draw[->] (a) -- node {$\scriptstyle f$} (x);
+\draw[->] (x) -- node {$\scriptstyle p$} (y);
+\draw[vequal] (a) -- (b);
+\draw[hequal] (b) -- (y);
+\end{tikzpicture
+";
+
+            var dic = new Dictionary<TokenString, Morphism>()
+            {
+                { "f".ToTokenString(), ToMorphismHelp("f", "a", "u", MorphismType.OneMorphism) },
+                { "p".ToTokenString(), ToMorphismHelp("p", "u", "c", MorphismType.OneMorphism) },
+            };
+            var xs = CreateTikZDiagram(tex, dic)
+                .CheckDiagram()
+                .Where(x => x.IsError)
+                .ToArray();
+            xs.Length.Is(1);
+            xs[0].Message.Is("等号のdomainとcodomainが異なります: (b) a → (y) c");
         }
 
         [TestMethod]

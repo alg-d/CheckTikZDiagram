@@ -83,17 +83,24 @@ namespace CheckTikZDiagram
                     case '[':
                     case ']':
                     case '\\':
-                    case ',':
                     case ' ':
                     case '$':
                     case '%':
-                    case '!':
                     case '"':
                     case '&':
                     case '_':
                     case '?':
                     case '#':
                         _texCommandFlag = false;
+                        return;
+
+                    case ',':
+                    case '!':
+                    case ':':
+                    case ';':
+                        _texCommandFlag = false;
+                        _temp.Append(x);
+                        AddToken(_temp.ToString(), _supOrSubFlag);
                         return;
 
                     default:

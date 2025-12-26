@@ -15,6 +15,8 @@ namespace UnitTestProject1
             TikZNode.Create(@"\node (C) at (0, 1.2) {$\cat{C}$}").TestTikZNode("C", @"\cat {C}");
             TikZNode.Create(@"\node (x0) at (0, 1.2) {$x$}").TestTikZNode("x0", "x");
             TikZNode.Create(@"\node (a) at (3, 1.2) {$(u, v)$}").TestTikZNode("a", "(u, v)");
+            TikZNode.Create(@"\node (Prod) at (1, 1) {$\dprod_{i\in\N}X_n$}").TestTikZNode("Prod", @"\dprod_{i\in\N}X_n");
+            TikZNode.Create(@"\node[anchor=base] (u) at (5.3, 3.1) {$14$}").TestTikZNode("u", "14");
         }
 
         [TestMethod]

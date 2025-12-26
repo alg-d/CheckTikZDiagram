@@ -111,6 +111,7 @@ namespace CheckTikZDiagram
         /// arrowのフォーマットを表す正規表現
         /// </summary>
         public string TikZArrowRegex { get; set; } = "";
+        public string TikZArrowForEqualRegex { get; set; } = ""; // 等号用
 
         /// <summary>
         /// 射のフォーマットを表す正規表現
@@ -189,8 +190,9 @@ namespace CheckTikZDiagram
                 Diagonal = "\\Diagonal",
                 Adjoint = "\\dashv",
                 Composite = "\\compo",
-                TikZNodeRegex = @"\\node\s*\((?<name>[^)]*)\).*\{\$(?<math>.*)\$\}\s*$",
+                TikZNodeRegex = @"\\node[^(]*\((?<name>[^)]*)\).*\{\$(?<math>.*)\$\}\s*$",
                 TikZArrowRegex = @"\\draw\s*\[(?<arrow>[^\]]*)[^()]*\((?<source>[^(),]*)\).*node.*\{\$(?<math>.*)\$\}.*\((?<target>[^(),]*)\)\s*$",
+                TikZArrowForEqualRegex = @"\\draw\s*\[.*(equal|nullarray).*\((?<source>[^(),]*)\).*\((?<target>[^(),]*)\)\s*$",
                 MorphismRegex = @"^(?<name>.*)\\colon(?<source>.*)\\(?<arrow>[Rr]{1,2})ightarrow(?<target>.*)$",
             };
 

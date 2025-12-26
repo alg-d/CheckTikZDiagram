@@ -99,6 +99,13 @@ namespace UnitTestProject1
             arrow.TargetNodeName.Is(target);
         }
 
+        public static void TestTikZArrowEqual(this TikZArrow arrow, string source, string target)
+        {
+            arrow.MathObject.Is(MathEqualObject.Instance);
+            arrow.SourceNodeName.Is(source);
+            arrow.TargetNodeName.Is(target);
+        }
+
         public static MathSequence TestSingleMath(this IEnumerable<MathObject> source)
         {
             var list = source.ToList();

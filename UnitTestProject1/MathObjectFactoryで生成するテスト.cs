@@ -322,11 +322,11 @@ namespace UnitTestProject1
             math[0].AsMathSequence().List.Count.Is(3);
             math[0].Main.TestString("abc");
             math[0].ToTokenString().TestString("abc");
-            math[0].OriginalText.Is("abc");
+            math[0].OriginalText.Is(@"abc\,");
             math[1].AsMathSequence().List.Count.Is(3);
             math[1].Main.TestString("def");
             math[1].ToTokenString().TestString("def");
-            math[1].OriginalText.Is(@"\, def");
+            math[1].OriginalText.Is(@"def");
 
             math = new MathObjectFactory(@"\beta_i\cong \gamma_j").Create().ToArray();
             math.Length.Is(2);

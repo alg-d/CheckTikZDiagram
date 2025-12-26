@@ -21,6 +21,13 @@ namespace CheckTikZDiagram
         public static Regex Construct { get; set; } = new Regex(Config.Instance.TikZArrowRegex);
 
         /// <summary>
+        /// 等号用
+        /// source: 最初の () の中身 (anchorは除く)
+        /// target: 最後の () の中身 (anchorは除く)
+        /// </summary>
+        public static Regex ConstructForEqual { get; set; } = new Regex(Config.Instance.TikZArrowForEqualRegex);
+
+        /// <summary>
         /// 射を表すMathObject
         /// </summary>
         public MathObject MathObject { get; }
@@ -86,6 +93,16 @@ namespace CheckTikZDiagram
                         yield return new TikZArrow(item, source, target);
                     }
                 }
+                yield break;
+            }
+            
+            var n = ConstructForEqual.Match(text);
+            if (n.Success)
+            {
+                var source = RemoveAnchor(n.Groups["source"].Value);
+                var target = RemoveAnchor(n.Groups["target"].Value);
+
+                yield return new TikZArrow(MathEqualObject.Instance, source, target);
             }
         }
 
